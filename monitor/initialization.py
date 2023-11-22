@@ -1,5 +1,6 @@
 import asyncio
 import os
+import httpx
 
 from loguru import logger
 
@@ -73,7 +74,12 @@ async def setup_monitoring(user_dir):
         # Initialize notification clients
         notification_clients = await setup_notification_clients(config.notify_config)
 
-        return config, database, notification_clients
+        # Initialize httpx AsyncClient clinet
+        httpx_client = httpx.AsyncClient(
+            proxies=os.getenv("HTTP_PROXY"), verify=False, http2=True, timeout= 20
+        )
+        return config, database, notification_clients, httpx_client
+
     except Exception as e:
         logger.error(f"Error during setup for {user_dir}: {e}")
         raise
@@ -92,13 +98,24 @@ async def setup_and_monitor(user_dir, is_running):
     """
     database = None
     notification_clients = None
+    httpx_client = None
     try:
         if os.path.exists(f"{user_dir}/config.toml"):
-            config, database, notification_clients = await setup_monitoring(user_dir)
+            (
+                config,
+                database,
+                notification_clients,
+                httpx_client,
+            ) = await setup_monitoring(user_dir)
             website_tasks = [
                 asyncio.create_task(
                     monitor_site(
-                        site, database, notification_clients, user_dir, is_running
+                        site,
+                        database,
+                        notification_clients,
+                        user_dir,
+                        is_running,
+                        httpx_client,
                     )
                 )
                 for site in config.websites
@@ -108,10 +125,12 @@ async def setup_and_monitor(user_dir, is_running):
         logger.error(f"Error in monitoring process for {user_dir}: {e}")
 
     finally:
-        # 清理操作：关闭数据库和客户端
+        # 清理操作：关闭数据库和客户端和http连接
         if database:
             database.close()
+        if httpx_client:
+            await httpx_client.aclose()
         if notification_clients:
-            for client in notification_clients.values():
-                await client.close()
+            for notification_client in notification_clients.values():
+                await notification_client.close()
         logger.info(f"Monitoring stopped for user: {user_dir}")

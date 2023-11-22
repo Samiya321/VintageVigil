@@ -1,7 +1,7 @@
 from website import *
 
 
-def fetch_scraper(website_name):
+def fetch_scraper(website_name, httpx_client):
     """
     Create and return a scraper object based on the website name.
     """
@@ -15,4 +15,4 @@ def fetch_scraper(website_name):
         "fril": Fril,
         "suruga": Suruga,
     }
-    return scrapers.get(website_name)()
+    return scrapers.get(website_name)(httpx_client)

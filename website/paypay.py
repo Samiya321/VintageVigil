@@ -5,9 +5,11 @@ from .base.scraper import BaseScrapy
 
 
 class Paypay(BaseScrapy):
-    def __init__(self):
+    def __init__(self, client):
         super().__init__(
-            base_url="https://paypayfleamarket.yahoo.co.jp/api/v1/search", page_size=100
+            base_url="https://paypayfleamarket.yahoo.co.jp/api/v1/search",
+            page_size=100,
+            client=client,
         )
 
     async def create_search_params(self, search, page: int) -> dict:

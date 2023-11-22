@@ -21,7 +21,7 @@ notify = 1
 
 [websites.mercari_user]
 enabled = true
-delay = 0.5
+delay = 1
 [[websites.mercari_user.searches]]
 keyword = "269741600"
 notify = 2

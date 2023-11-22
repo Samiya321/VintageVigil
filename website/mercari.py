@@ -36,15 +36,10 @@ class MercariItemStatus:
 
 
 class BaseSearch:
-    def __init__(self, root_url, page_size=120):
+    def __init__(self, root_url, client, page_size=120):
         self.page_size = page_size
         self.root_url = root_url
-        self.client = httpx.AsyncClient(
-            proxies=os.getenv("HTTP_PROXY"),
-            verify=False,
-            http2=True,
-            timeout=httpx.Timeout(10.0),  # 设置统一的超时时间
-        )
+        self.client = client
 
     async def close(self):
         await self.client.aclose()
@@ -166,11 +161,11 @@ class BaseSearch:
 
 
 class MercariSearch(BaseSearch):
-    def __init__(self):
-        super().__init__("https://api.mercari.jp/v2/entities:search")
+    def __init__(self, client):
+        super().__init__("https://api.mercari.jp/v2/entities:search", client)
 
     async def search(
-            self, search, iteration_count
+        self, search, iteration_count
     ) -> AsyncGenerator[SearchResultItem, None]:
         # iteration_count = 2
         if iteration_count == 0:
@@ -178,7 +173,7 @@ class MercariSearch(BaseSearch):
             created_time_page = 100
         else:
             score_page = 3
-            created_time_page = 3
+            created_time_page = 7
         tasks = [
             self.search_with_sort(search, "SORT_SCORE", score_page),
             self.search_with_sort(search, "SORT_CREATED_TIME", created_time_page),
@@ -194,7 +189,7 @@ class MercariSearch(BaseSearch):
                 yield product
 
     async def search_with_sort(
-            self, search, sort_type, max_pages
+        self, search, sort_type, max_pages
     ) -> List[SearchResultItem]:
         tasks = (
             self.fetch_products(search, page, sort_type) for page in range(0, max_pages)
@@ -208,7 +203,7 @@ class MercariSearch(BaseSearch):
         ]
 
     async def fetch_products(
-            self, search, page: int, sort_type
+        self, search, page: int, sort_type
     ) -> AsyncGenerator[SearchResultItem, None]:
         try:
             data = self.create_data(search, page, sort_type)
@@ -256,14 +251,16 @@ class MercariSearch(BaseSearch):
 
 
 class MercariItems(BaseSearch):
-    def __init__(self):
-        super().__init__("https://api.mercari.jp/items/get_items")
+    def __init__(self, client):
+        super().__init__("https://api.mercari.jp/items/get_items", client)
         self.has_next = True
         self.pager_id = ""
 
     async def search(
-            self, search, iteration_count
+        self, search, iteration_count
     ) -> AsyncGenerator[SearchResultItem, None]:
+        self.has_next = True
+        self.pager_id = ""
         while self.has_next:
             async for item in self.fetch_products(search):
                 yield item
@@ -290,7 +287,10 @@ class MercariItems(BaseSearch):
             "seller_id": search.keyword,
             "limit": 150,
             # "status": "on_sale,trading,sold_out",
-            "status": getattr(search, "status", "on_sale"),
-            "max_pager_id": self.pager_id,
+            "status": getattr(search, "status", "on_sale, trading"),
         }
+        # 仅当 self.pager_id 非空时才添加 max_pager_id 参数
+        if self.pager_id:
+            params["max_pager_id"] = self.pager_id
+
         return params

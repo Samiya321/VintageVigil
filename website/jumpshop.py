@@ -4,14 +4,17 @@ from .base.scraper import BaseScrapy
 
 
 class JumpShop(BaseScrapy):
-    def __init__(self):
+    def __init__(self, client):
         headers = {
             "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
             "accept-language": "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36 Edg/118.0.2088.76",
         }
         super().__init__(
-            base_url="https://jumpshop-online.com/search", page_size=20, headers=headers
+            base_url="https://jumpshop-online.com/search",
+            page_size=20,
+            headers=headers,
+            client=client,
         )
 
     async def create_search_params(self, search, page: int) -> dict:
@@ -19,7 +22,7 @@ class JumpShop(BaseScrapy):
             # 从 URL 解析参数
             get_param = (
                 lambda param, default="": self.get_param_value(search.keyword, param)
-                                          or default
+                or default
             )
             return {
                 "q": get_param("q"),

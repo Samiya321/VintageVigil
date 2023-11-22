@@ -3,8 +3,10 @@ from .base.scraper import BaseScrapy
 
 
 class Lashinbang(BaseScrapy):
-    def __init__(self):
-        super().__init__(base_url="https://lashinbang-f-s.snva.jp", page_size=24)
+    def __init__(self, client):
+        super().__init__(
+            base_url="https://lashinbang-f-s.snva.jp", page_size=24, client=client
+        )
 
     async def create_search_params(self, search, page: int) -> dict:
         limit = 100
@@ -29,10 +31,10 @@ class Lashinbang(BaseScrapy):
     async def get_response_items(self, response):
         data = json.loads(re.search(r"{.*}", response, re.DOTALL).group())
         if (
-                not data
-                or "kotohaco" not in data
-                or "result" not in data["kotohaco"]
-                or "items" not in data["kotohaco"]["result"]
+            not data
+            or "kotohaco" not in data
+            or "result" not in data["kotohaco"]
+            or "items" not in data["kotohaco"]["result"]
         ):
             return []  # 如果数据结构不完整或不存在，则返回空列表
 

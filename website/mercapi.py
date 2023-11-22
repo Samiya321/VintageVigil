@@ -4,8 +4,12 @@ from .base.search_result_item import SearchResultItem
 
 
 class MercariMercapi:
-    def __init__(self):
+    def __init__(
+        self,
+        client
+    ):
         self._mercapi = Mercapi()
+        self.client = client
 
     async def search(self, kw):
         results = await self._mercapi.search(query=kw)

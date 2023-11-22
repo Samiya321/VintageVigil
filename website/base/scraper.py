@@ -3,21 +3,22 @@ from math import ceil
 from urllib import parse
 from .common_imports import *
 
+
 class BaseScrapy(ABC):
-    def __init__(self, base_url, page_size, headers=None):
+    def __init__(
+        self,
+        base_url,
+        page_size,
+        client, 
+        headers=None,
+    ):
         self.base_url = base_url
         self.pageSize = page_size
         self.headers = headers if headers else {}
-        self.client = httpx.AsyncClient(
-            proxies=os.getenv("HTTP_PROXY"), verify=False, http2=True
-        )
-
-    # 关闭AsyncClient
-    async def close(self):
-        await self.client.aclose()
+        self.client = client
 
     async def search(
-            self, search, iteration_count
+        self, search, iteration_count
     ) -> AsyncGenerator[SearchResultItem, None]:
         # 获取最大页数
         max_pages = await self.get_max_pages(search)
@@ -44,7 +45,7 @@ class BaseScrapy(ABC):
 
     # 搜索具体页数里的内容
     async def fetch_products(
-            self, search, page: int
+        self, search, page: int
     ) -> AsyncGenerator[SearchResultItem, None]:
         # 获取响应体的text
         res = await self.get_response(search, page)

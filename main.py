@@ -30,12 +30,12 @@ async def start_monitoring():
 if __name__ == "__main__":
     try:
         asyncio.run(start_monitoring())
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, asyncio.exceptions.CancelledError):
         logger.info("Detected program interruption. Shutting down...")
         is_running = False  # 通知监控任务停止
 
         # Wait for a while to let all tasks notice the change
-        asyncio.run(asyncio.sleep(3))
+        asyncio.run(asyncio.sleep(1))
         logger.info(
             "All tasks have been notified to stop. The program is shutting down."
         )

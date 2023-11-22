@@ -5,8 +5,10 @@ from .base.scraper import BaseScrapy
 
 
 class Suruga(BaseScrapy):
-    def __init__(self):
-        super().__init__(base_url="https://www.suruga-ya.jp/search", page_size=24)
+    def __init__(self, client):
+        super().__init__(
+            base_url="https://www.suruga-ya.jp/search", page_size=24, client=client
+        )
 
     async def get_response(self, search, page: int):
         params = await self.create_search_params(search, page)
@@ -47,7 +49,7 @@ class Suruga(BaseScrapy):
             # 从 URL 解析参数
             get_param = (
                 lambda param, default="": self.get_param_value(search.keyword, param)
-                                          or default
+                or default
             )
             return {
                 "category": get_param("category"),
