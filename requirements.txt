@@ -1,0 +1,12 @@
+python-dotenv
+toml
+
+httpx[http2]
+aiohttp
+parsel
+
+mercapi
+ecdsa
+
+loguru
+telebot

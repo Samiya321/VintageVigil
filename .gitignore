@@ -1,0 +1,28 @@
+# 日志文件
+logs/
+*.log
+
+# 缓存文件
+__pycache__/
+
+# 数据库文件
+*.db
+*.sqlite
+*.sqlite3
+
+# 虚拟环境
+venv/
+.env
+
+# IDE/编辑器特定文件
+.vscode/
+.idea/
+
+# Python相关
+*.pyc
+*.pyo
+*.pyd
+build/
+dist/
+eggs/
+*.egg-info/
