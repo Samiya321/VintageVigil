@@ -109,7 +109,7 @@ class Suruga(BaseScrapy):
         return search_result_item
 
     async def get_item_name(self, item):
-        item.css("p.title a::text").get()
+        return item.css("p.title a::text").get()
 
     async def get_item_id(self, item):
         url = item.css("p.title a::attr(href)").get()
