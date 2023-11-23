@@ -7,14 +7,10 @@ from telebot.async_telebot import AsyncTeleBot
 
 
 class TelegramClient:
-    def __init__(self, bot_token: str, chat_id: str, send_type="news", parse_mode=None):
-        if not bot_token or not chat_id:
-            raise ValueError("bot_token 和 chat_id 不能为空")
-
-        asyncio_helper.CONNECT_TIMEOUT = 20
-        asyncio_helper.REQUEST_TIMEOUT = 20
-        asyncio_helper.proxy = os.getenv("HTTP_PROXY") or None
-        self.bot = AsyncTeleBot(bot_token, parse_mode=parse_mode)
+    def __init__(self, bot, chat_id: str, send_type="news"):
+        if  not chat_id:
+            raise ValueError("chat_id 不能为空")
+        self.bot = bot
         self.chat_id = chat_id
         self.send_type = send_type
         self.client_type = "telegram"
@@ -24,10 +20,6 @@ class TelegramClient:
             photo_url="https://static.mercdn.net/c!/w=360,f=webp/item/detail/orig/photos/m79600701178_1.jpg",
             message="TelegramClient 实例化成功。",
         )
-
-    async def close(self):
-        await self.bot.close_session()
-        logger.info("TelegramClient 关闭成功。")
 
     async def send_text(self, message: str):
         max_retries = 3

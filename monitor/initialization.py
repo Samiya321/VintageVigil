@@ -8,7 +8,7 @@ from common import Config, ProductDatabase, TelegramClient, setup_logger, WecomC
 from .monitoring import monitor_site
 
 
-async def setup_notification_clients(notification_config):
+async def setup_notification_clients(notification_config, httpx_client, telegram_bots):
     """
     Set up notification clients based on the configuration.
     """
@@ -16,20 +16,16 @@ async def setup_notification_clients(notification_config):
     try:
         # Setup Telegram Clients
         if notification_config.get("telegram_chat_id"):
-            telegram_bot_tokens = [
-                os.getenv("TELEGRAM_BOT_TOKEN_1"),
-                os.getenv("TELEGRAM_BOT_TOKEN_2"),
-            ]
-            for index, token in enumerate(telegram_bot_tokens):
-                if token:
+            for index, bot in telegram_bots.items():
+                if bot:
                     client_key = f"telegram_{index + 1}"
                     notification_clients[client_key] = TelegramClient(
-                        token,
+                        bot,
                         notification_config.get("telegram_chat_id"),
                         notification_config.get("tg_send_type"),
                     )
                     # Initialize client
-                    await notification_clients[client_key].initialize()
+                    # await notification_clients[client_key].initialize()
 
         # Setup WeCom Clients
         if notification_config.get("wecom_user_id"):
@@ -44,9 +40,10 @@ async def setup_notification_clients(notification_config):
                         corp_secret,
                         agent_id,
                         notification_config.get("wecom_user_id"),
+                        httpx_client,
                         notification_config.get("we_send_type"),
                     )
-                    await notification_clients[client_key].initialize()
+                    # await notification_clients[client_key].initialize()
 
         return notification_clients
     except Exception as e:
@@ -54,7 +51,7 @@ async def setup_notification_clients(notification_config):
         raise
 
 
-async def setup_monitoring(user_dir):
+async def setup_monitoring(user_dir, httpx_client, telegram_bots):
     """
     Setup monitoring system for a given user.
     """
@@ -72,13 +69,11 @@ async def setup_monitoring(user_dir):
         database = ProductDatabase(database_path)
 
         # Initialize notification clients
-        notification_clients = await setup_notification_clients(config.notify_config)
-
-        # Initialize httpx AsyncClient clinet
-        httpx_client = httpx.AsyncClient(
-            proxies=os.getenv("HTTP_PROXY"), verify=False, http2=False, timeout= 20
+        notification_clients = await setup_notification_clients(
+            config.notify_config, httpx_client, telegram_bots
         )
-        return config, database, notification_clients, httpx_client
+
+        return config, database, notification_clients
 
     except Exception as e:
         logger.error(f"Error during setup for {user_dir}: {e}")
@@ -92,21 +87,19 @@ def fetch_user_directories(base_path):
     return [dir_entry.path for dir_entry in os.scandir(base_path) if dir_entry.is_dir()]
 
 
-async def setup_and_monitor(user_dir, is_running):
+async def setup_and_monitor(user_dir, is_running, httpx_client, telegram_bots):
     """
     Setup and start monitoring for a specific user.
     """
     database = None
     notification_clients = None
-    httpx_client = None
     try:
         if os.path.exists(f"{user_dir}/config.toml"):
             (
                 config,
                 database,
                 notification_clients,
-                httpx_client,
-            ) = await setup_monitoring(user_dir)
+            ) = await setup_monitoring(user_dir, httpx_client, telegram_bots)
             website_tasks = [
                 asyncio.create_task(
                     monitor_site(
@@ -125,12 +118,7 @@ async def setup_and_monitor(user_dir, is_running):
         logger.error(f"Error in monitoring process for {user_dir}: {e}")
 
     finally:
-        # 清理操作：关闭数据库和客户端和http连接
+        # 清理操作：关闭数据库
         if database:
             database.close()
-        if httpx_client:
-            await httpx_client.aclose()
-        if notification_clients:
-            for notification_client in notification_clients.values():
-                await notification_client.close()
         logger.info(f"Monitoring stopped for user: {user_dir}")

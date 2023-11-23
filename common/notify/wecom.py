@@ -6,7 +6,15 @@ from loguru import logger
 
 
 class WecomClient:
-    def __init__(self, corp_id, corp_secret, agent_id, user_id, send_type="news"):
+    def __init__(
+        self,
+        corp_id,
+        corp_secret,
+        agent_id,
+        user_id,
+        httpx_client, 
+        send_type="news",
+    ):
         self.corp_id = corp_id
         self.corp_secret = corp_secret
         self.agent_id = agent_id
@@ -14,7 +22,7 @@ class WecomClient:
         self.access_token = None
         self.token_expires_at = None
         self.send_type = send_type
-        self.client = httpx.AsyncClient()
+        self.client = httpx_client
         self.client_type = "wecom"
 
     async def initialize(self):
@@ -24,15 +32,11 @@ class WecomClient:
             message="WeCom 实例化成功。",
         )
 
-    async def close(self):
-        await self.client.aclose()
-        logger.info("WeCom 客户端已关闭")
-
     async def get_access_token(self, force_refresh=False):
         if (
-                self.access_token
-                and self.token_expires_at > datetime.now()
-                and not force_refresh
+            self.access_token
+            and self.token_expires_at > datetime.now()
+            and not force_refresh
         ):
             return self.access_token
 
@@ -112,7 +116,7 @@ class WecomClient:
             return {"error": "Failed to upload image"}
 
     async def send_news(
-            self, message: str, photo_url: str, message_url: str, title: str
+        self, message: str, photo_url: str, message_url: str, title: str
     ):
         access_token = await self.get_access_token()
         if access_token:
@@ -142,7 +146,7 @@ class WecomClient:
             return {"error": "Failed to get access token"}
 
     async def send_message(
-            self, message: str, photo_url: str = "", message_url="", title=""
+        self, message: str, photo_url: str = "", message_url="", title=""
     ):
         if self.send_type == "text":
             await self.send_text(message)
