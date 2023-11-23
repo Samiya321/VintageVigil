@@ -76,7 +76,7 @@ async def setup_monitoring(user_dir):
 
         # Initialize httpx AsyncClient clinet
         httpx_client = httpx.AsyncClient(
-            proxies=os.getenv("HTTP_PROXY"), verify=False, http2=True, timeout= 20
+            proxies=os.getenv("HTTP_PROXY"), verify=False, http2=False, timeout= 20
         )
         return config, database, notification_clients, httpx_client
 

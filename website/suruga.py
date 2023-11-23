@@ -88,7 +88,7 @@ class Suruga(BaseScrapy):
     async def create_product_from_card(self, item) -> SearchResultItem:
         name = await self.get_item_name(item)
 
-        item_id = await self.get_item_id(item)
+        id = await self.get_item_id(item)
 
         product_url = await self.get_item_product_url(id)
 
@@ -103,7 +103,7 @@ class Suruga(BaseScrapy):
             price=price,
             image_url=image_url,
             product_url=product_url,
-            id=item_id,
+            id=id,
             site=site,
         )
         return search_result_item
