@@ -8,7 +8,7 @@ from telebot.async_telebot import AsyncTeleBot
 
 class TelegramClient:
     def __init__(self, bot, chat_id: str, send_type="news"):
-        if  not chat_id:
+        if not chat_id:
             raise ValueError("chat_id 不能为空")
         self.bot = bot
         self.chat_id = chat_id
@@ -57,15 +57,17 @@ class TelegramClient:
         max_retries = 3
         # retry_delay = 1
 
-        start_time = time.time()
         for attempt in range(max_retries):
             try:
+                start_time = time.time()
                 await self.bot.send_photo(
                     self.chat_id, photo=photo_url, caption=message
                 )
                 end_time = time.time()
                 notification_time = end_time - start_time
-                logger.info(f"Notification for item sent in {notification_time:.2f} seconds")
+                logger.info(
+                    f"Notification for item sent in {notification_time:.2f} seconds"
+                )
                 return
             except Exception as e:
                 logger.error(
@@ -76,7 +78,6 @@ class TelegramClient:
                 #     retry_delay *= 2
 
     async def send_message(self, message: str, photo_url=""):
-
         try:
             if self.send_type == "text":
                 await self.send_text(message)

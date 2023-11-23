@@ -50,7 +50,6 @@ async def process_search_keyword(
                         unique_products.add(product_key)
                         products_to_process.append(product_info)
 
-                pass
                 for item in database.upsert_products(
                     products_to_process,
                     search_query.keyword,
