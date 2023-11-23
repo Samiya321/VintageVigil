@@ -25,7 +25,7 @@ async def setup_notification_clients(notification_config, httpx_client, telegram
                         notification_config.get("tg_send_type"),
                     )
                     # Initialize client
-                    # await notification_clients[client_key].initialize()
+                    await notification_clients[client_key].initialize()
 
         # Setup WeCom Clients
         if notification_config.get("wecom_user_id"):
@@ -43,7 +43,7 @@ async def setup_notification_clients(notification_config, httpx_client, telegram
                         httpx_client,
                         notification_config.get("we_send_type"),
                     )
-                    # await notification_clients[client_key].initialize()
+                    await notification_clients[client_key].initialize()
 
         return notification_clients
     except Exception as e:

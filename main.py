@@ -1,6 +1,7 @@
 import asyncio
 import httpx
 import os
+from dotenv import load_dotenv
 from telebot.async_telebot import AsyncTeleBot
 from telebot import asyncio_helper
 
@@ -13,6 +14,7 @@ is_running = True
 
 
 async def initialize_resources(parse_mode=None):
+    load_dotenv()
     proxy = os.getenv("HTTP_PROXY")
 
     # Initialize httpx AsyncClient clinet

@@ -3,7 +3,6 @@ import time
 
 from loguru import logger
 from telebot import asyncio_helper
-from telebot.async_telebot import AsyncTeleBot
 
 
 class TelegramClient:

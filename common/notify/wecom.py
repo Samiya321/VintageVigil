@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
 from io import BytesIO
 
-import httpx
 from loguru import logger
 
 
@@ -82,13 +81,12 @@ class WecomClient:
                 "agentid": self.agent_id,
                 "text": {"content": message},
             }
-            async with httpx.AsyncClient() as client:
-                try:
-                    response = await client.post(url, json=message)
-                    return response.json()
-                except Exception as e:
-                    logger.error(f"发送文本消息失败: {e}")
-                    return {"error": "Failed to send text message"}
+            try:
+                response = await self.client.post(url, json=message)
+                return response.json()
+            except Exception as e:
+                logger.error(f"发送文本消息失败: {e}")
+                return {"error": "Failed to send text message"}
         else:
             return {"error": "Failed to get access token"}
 
