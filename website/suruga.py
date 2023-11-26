@@ -118,10 +118,10 @@ class Suruga(BaseScrapy):
 
     async def get_item_image_url(self, item_id):
         # 加上random=64，避免tg服务器无法解析链接
-        return "https://www.suruga-ya.jp/database/photo.php?shinaban={}&size=m&random=64".format(
+        return "https://www.suruga-ya.jp/database/photo.php?shinaban={}&size=m&random=54".format(
             item_id
         )
-        # return "https://www.suruga-ya.jp/database/pics_light/game/{}.jpg&random=64".format(id)
+        # return "https://www.suruga-ya.jp/database/pics_light/game/{}.jpg&random=54".format(id)
 
     async def get_item_product_url(self, item_id):
         return "https://www.suruga-ya.jp/product/detail/{}".format(item_id)
