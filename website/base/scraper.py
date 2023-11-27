@@ -9,7 +9,7 @@ class BaseScrapy(ABC):
         self,
         base_url,
         page_size,
-        client, 
+        client,
         headers=None,
     ):
         self.base_url = base_url
@@ -64,8 +64,14 @@ class BaseScrapy(ABC):
         tasks = (self.create_product_from_card(item) for item in items)
         return await asyncio.gather(*tasks)
 
+    # 请求链接和参数，可在子类中重写
+    async def create_request_url(self, params):
+        return self.base_url, params
+
     async def get_response(self, search, page: int):
         params = await self.create_search_params(search, page)
+        
+        url, params = await self.create_request_url(params)
 
         max_retries = 5  # 定义最大重试次数
         retry_delay = 1  # 定义初始重试延迟（秒）
@@ -73,7 +79,7 @@ class BaseScrapy(ABC):
         for attempt in range(max_retries):
             try:
                 response = await self.client.get(
-                    self.base_url, params=params, headers=self.headers, timeout=20
+                    url, params=params, headers=self.headers, timeout=20
                 )
                 response.raise_for_status()
                 return response.text

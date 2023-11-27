@@ -10,39 +10,9 @@ class Suruga(BaseScrapy):
             base_url="https://www.suruga-ya.jp/search", page_size=24, client=client
         )
 
-    async def get_response(self, search, page: int):
-        params = await self.create_search_params(search, page)
-
+    async def create_request_url(self, params):
         final_url = f"{self.base_url}?{self.encode_params(params)}"
-
-        max_retries = 5  # 定义最大重试次数
-        retry_delay = 1  # 定义初始重试延迟（秒）
-
-        for attempt in range(max_retries):
-            try:
-                response = await self.client.get(
-                    final_url, headers=self.headers, timeout=20
-                )
-                response.raise_for_status()
-                return response.text
-            except httpx.HTTPStatusError as e:
-                logger.warning(
-                    f"Retry {attempt + 1}/{max_retries} for {e.response.url} after status code {e.response.status_code}"
-                )
-                await asyncio.sleep(retry_delay)
-                retry_delay *= 2
-            except (httpx.RequestError, httpx.TimeoutException) as e:
-                logger.warning(
-                    f"Retry {attempt + 1}/{max_retries}  due to network error: {e}"
-                )
-                await asyncio.sleep(retry_delay)
-                retry_delay *= 2
-            except Exception as e:
-                logger.error(f"An unexpected error occurred: {e}")
-        else:
-            logger.error(f"Failed to get response after {max_retries} attempts")
-
-        return None  # 如果重试失败，返回 None
+        return final_url, None
 
     async def create_search_params(self, search, page: int) -> dict:
         if "https" in search.keyword:
