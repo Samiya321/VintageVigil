@@ -50,14 +50,14 @@ async def process_search_keyword(
                         unique_products.add(product_key)
                         products_to_process.append(product_info)
 
-                # 创建一个空列表来收集异步任务
-                notification_tasks = []
+                # 用于收集 Telegram 客户端的异步任务
+                telegram_tasks = []
                 for item in database.upsert_products(
                     products_to_process,
                     search_query.keyword,
                     website_config.website_name,
                 ):
-                    if iteration_count > 0:
+                    if iteration_count >= 0:
                         price_currency = item["price"] * website_config.exchange_rate
                         if item.get("pre_price") is not None:
                             item["price"] = f"{item['pre_price']} 円 ==> {item['price']}"
@@ -72,17 +72,24 @@ async def process_search_keyword(
                         # 创建并添加异步任务到列表
                         try:
                             notify_client = notification_clients[search_query.notify]
-                            task = send_notification(notify_client, message, item)
-                            notification_tasks.append(task)
+                            if notify_client.client_type == "telegram":
+                                task = send_notification(notify_client, message, item)
+                                telegram_tasks.append(task)
+                                if len(telegram_tasks) >= 10:  # 如果达到10个任务
+                                    await asyncio.gather(
+                                        *telegram_tasks, return_exceptions=True
+                                    )  # 执行这些任务
+                                    telegram_tasks = []  # 清空列表以便收集新的任务
+                            elif notify_client.client_type == "wecom":
+                                # 对于 WeCom 客户端，同步执行发送消息
+                                await send_notification(notify_client, message, item)
 
-                            item_id = item["id"]
-                            logger.info(f"Notification sent for item: {item_id}")
                         except Exception as e:
                             logger.error(f"Error preparing notification: {e}")
 
                 # 循环结束后，使用 asyncio.gather 并发执行所有收集到的异步任务
-                if notification_tasks:
-                    await asyncio.gather(*notification_tasks, return_exceptions=True)
+                if telegram_tasks:
+                    await asyncio.gather(*telegram_tasks, return_exceptions=True)
 
                 iteration_count += 1
                 await asyncio.sleep(website_config.delay)
