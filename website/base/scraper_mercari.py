@@ -51,8 +51,8 @@ class BaseSearch:
         pass  # 由子类实现
 
     async def get_response(self, method, data=None, params=None):
-        max_retries = 5  # Maximum number of retries
-        retry_delay = 1  # Initial delay between retries, in seconds
+        max_retries = 3  # 最大重试次数
+        retry_delay = 1  # 初始重试间隔（秒）
 
         for attempt in range(max_retries):
             try:
@@ -64,7 +64,7 @@ class BaseSearch:
                         headers=headers,
                         data=data,
                     )
-                else:  # Assume GET if not POST
+                else:  # 默认为 GET 请求
                     response = await self.client.get(
                         url=self.root_url,
                         headers=headers,
@@ -75,16 +75,21 @@ class BaseSearch:
                 return response.json()
 
             except httpx.HTTPStatusError as e:
-                error_message = (
-                    f"HTTP error {e.response.status_code} on attempt {attempt + 1}"
-                )
+                if e.response.status_code == 503:
+                    error_message = f"Service unavailable (503) on attempt {attempt + 1}, will retry after delay."
+                    # 503 时增加等待时间
+                    retry_delay = 0.5
+                else:
+                    error_message = (
+                        f"HTTP error {e.response.status_code} on attempt {attempt + 1}"
+                    )
             except (httpx.RequestError, httpx.TimeoutException) as e:
                 error_message = f"Network error on attempt {attempt + 1}: {e}"
             except Exception as e:
                 logger.error(f"Unexpected error on attempt {attempt + 1}: {e}")
-                break  # Breaking on unexpected errors
+                break  # 遇到意外错误时中断
 
-            # Log the error message and handle retry logic
+            # 记录错误消息并处理重试逻辑
             logger.error(error_message)
             if attempt < max_retries - 1:
                 await asyncio.sleep(retry_delay)
@@ -157,4 +162,3 @@ class BaseSearch:
         )
 
         return item
-    
