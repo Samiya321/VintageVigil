@@ -2,7 +2,7 @@ python-dotenv
 toml
 
 httpx[http2]
-urllib3==1.25.11
+urllib3==1.26.18
 aiohttp
 parsel
 
