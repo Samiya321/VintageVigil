@@ -25,23 +25,28 @@ class BaseScrapy(ABC):
         if max_pages == 0:
             return  # 直接返回，不执行任何任务
 
-        # 根据最大页数，把每一页生成一个任务
-        tasks = (self.fetch_products(search, page) for page in range(1, max_pages + 1))
-        # 运行任务
-        pages_content = await asyncio.gather(*tasks, return_exceptions=True)
+        # 分批处理每页任务，每批最多100页
+        maxConcurrentPages = 100
+        for start_page in range(1, max_pages + 1, maxConcurrentPages):
+            end_page = min(start_page + 99, max_pages)
+            tasks = (
+                self.fetch_products(search, page)
+                for page in range(start_page, end_page + 1)
+            )
+            pages_content = await asyncio.gather(*tasks, return_exceptions=True)
 
-        # 遍历每一页的结果
-        for index, page_products in enumerate(pages_content):
-            # 处理或记录异常
-            if isinstance(page_products, Exception):
-                logger.error(f"Error fetching page {index + 1}: {page_products}")
-                continue
-            # 跳过空列表
-            if not page_products:
-                continue
-            # 迭代返回该页的商品信息
-            for product in page_products:
-                yield product
+            # 遍历每一页的结果
+            for index, page_products in enumerate(pages_content, start=start_page):
+                # 处理或记录异常
+                if isinstance(page_products, Exception):
+                    logger.error(f"Error fetching page {index}: {page_products}")
+                    continue
+                # 跳过空列表
+                if not page_products:
+                    continue
+                # 迭代返回该页的商品信息
+                for product in page_products:
+                    yield product
 
     # 搜索具体页数里的内容
     async def fetch_products(
@@ -67,7 +72,6 @@ class BaseScrapy(ABC):
     # 请求链接和参数，可在子类中重写
     async def create_request_url(self, params):
         return self.base_url, params
-
 
     async def get_response(self, search, page: int):
         params = await self.create_search_params(search, page)
