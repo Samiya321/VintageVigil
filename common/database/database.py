@@ -1,5 +1,6 @@
 import sqlite3
 from typing import Tuple, List, Optional
+from urllib.parse import urlparse, parse_qs
 
 from loguru import logger
 
@@ -140,6 +141,21 @@ class ProductDatabase:
         )[0]
         self._safe_execute("update_product_count", (count, keyword_id))
 
+    def extract_keyword_from_url(self, keyword):
+        # 检查URL是否以http开头
+        if keyword.startswith("http"):
+            parsed_url = urlparse(keyword)
+            query_params = parse_qs(parsed_url.query)
+
+            # 检查关键参数并返回相应的值
+            for key in ["q", "search_word", "query"]:
+                if key in query_params:
+                    # 通常参数是一个列表，返回第一个值
+                    return query_params[key][0]
+
+        # 如果不是http开头的URL或者没有找到对应的关键字，则返回原始URL或None
+        return keyword
+
     def upsert_products(self, items: List[dict], keyword: str, website: str):
         """
         插入或更新产品信息。
@@ -149,9 +165,9 @@ class ProductDatabase:
         :param website: 关联的网站。
         :yield: 处理后的每个产品信息。
         """
-        logger.info(
-            f"Number of items entered into the database for processing: {len(items)}"
-        )
+        logger.info(f"Keyword: {keyword}, Website: {website}, Items: {len(items)}")
+        keyword = self.extract_keyword_from_url(keyword)
+
         self.insert_or_ignore_keyword(website, keyword)
         keyword_id = self.get_keyword_id(website, keyword)
         existing_prices = self._bulk_fetch_prices(items, keyword_id)
