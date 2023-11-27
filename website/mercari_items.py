@@ -20,20 +20,19 @@ class MercariItems(BaseSearch):
 
     async def fetch_products(self, search) -> AsyncGenerator[SearchResultItem, None]:
         params = self.create_params(search)
-
         response = await self.get_response("GET", params=params)
+
         if not response:
             self.has_next = False  # 将 has_next 设置为 False 以停止进一步的迭代
-            return  # 直接返回以结束函数执行
+            return  # 当没有下一页时直接返回，以结束函数执行
 
-        items = response["data"]
-        for item in items:
+        for item in response.get("data", []):
             searched_item = await self.create_product_from_card(item)
             yield searched_item
 
-        self.has_next = response["meta"]["has_next"]
-        if items:
-            self.pager_id = items[-1]["pager_id"]
+        self.has_next = response.get("meta", {}).get("has_next", False)
+        if self.has_next:
+            self.pager_id = response["data"][-1].get("pager_id", "")
 
     def create_params(self, search):
         params = {

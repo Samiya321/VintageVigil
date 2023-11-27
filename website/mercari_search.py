@@ -12,12 +12,7 @@ class MercariSearch(BaseSearch):
         self, search, iteration_count
     ) -> AsyncGenerator[SearchResultItem, None]:
         # iteration_count = 2
-        if iteration_count == 0:
-            score_page = 100
-            created_time_page = 100
-        else:
-            score_page = 3
-            created_time_page = 7
+        score_page, created_time_page = (100, 100) if iteration_count == 0 else (3, 7)
         tasks = [
             self.search_with_sort(search, "SORT_SCORE", score_page),
             self.search_with_sort(search, "SORT_CREATED_TIME", created_time_page),
@@ -26,52 +21,49 @@ class MercariSearch(BaseSearch):
 
         for products in all_products:
             if isinstance(products, Exception):
-                # 这里可以记录异常或执行其他异常处理逻辑
                 continue
-
             for product in products:
                 yield product
 
     async def search_with_sort(
         self, search, sort_type, max_pages
     ) -> List[SearchResultItem]:
-        tasks = (
-            self.fetch_products(search, page, sort_type) for page in range(0, max_pages)
-        )
+        tasks = [
+            self.fetch_products(search, page, sort_type) for page in range(max_pages)
+        ]
         pages_content = await asyncio.gather(*tasks, return_exceptions=True)
         return [
             product
             for page_products in pages_content
-            if not isinstance(page_products, Exception)
+            if isinstance(page_products, list)
             for product in page_products
         ]
 
     async def fetch_products(
         self, search, page: int, sort_type
-    ) -> AsyncGenerator[SearchResultItem, None]:
+    ) -> List[SearchResultItem]:
         try:
-            data = self.create_data(search, page, sort_type)
-            serialized_data = json.dumps(data, ensure_ascii=False).encode("utf-8")
-
+            serialized_data = json.dumps(
+                self.create_data(search, page, sort_type), ensure_ascii=False
+            ).encode("utf-8")
             response = await self.get_response("POST", data=serialized_data)
-
             if not response or "items" not in response:
                 return []  # 处理空响应或缺少项的情况
 
-            tasks = (self.create_product_from_card(item) for item in response["items"])
+            tasks = [self.create_product_from_card(item) for item in response["items"]]
             return await asyncio.gather(*tasks)
-        except Exception as e:
-            # 处理可能的异常情况，例如网络错误或解析失败
-            return []  # 或者根据需要进行其他合适的错误处理
+        except Exception:
+            # 处理可能的异常情况，例如网络错误或解析失败, 或者根据需要进行其他合适的错误处理
+            return []
 
     def create_data(self, search, page, sort_type):
-        data = {
+        return {
             # this seems to be random, but we'll add a prefix for mercari to track if they wanted to
-            "userId": "MERCARI_BOT_{}".format(uuid4()),
+            "userId": f"MERCARI_BOT_{uuid4()}",
             "pageSize": self.page_size,
-            "pageToken": "v1:{}".format(page),
+            "pageToken": f"v1:{page}",
             # same thing as userId, courtesy of a prefix for mercari
-            "searchSessionId": "MERCARI_BOT_{}".format(uuid4()),
+            "searchSessionId": f"MERCARI_BOT_{uuid4()}",
             # this is hardcoded in their frontend currently, so leaving it
             "indexRouting": "INDEX_ROUTING_UNSPECIFIED",
             "searchCondition": {
@@ -91,4 +83,3 @@ class MercariSearch(BaseSearch):
             # this is the default in their site, so leaving it as these 2
             "defaultDatasets": ["DATASET_TYPE_MERCARI", "DATASET_TYPE_BEYOND"],
         }
-        return data

@@ -14,27 +14,20 @@ class Fril(BaseScrapy):
         super().__init__(base_url="https://fril.jp/s", page_size=36, headers=headers)
 
     async def create_search_params(self, search, page: int) -> dict:
+        params = {
+            "query": search.keyword if "https" not in search.keyword else "",
+            "transaction": "selling",
+            "sort": "created_at",
+            "page": page,
+            "order": "desc",
+        }
         if "https" in search.keyword:
-            # 从 URL 解析参数
-            get_param = (
-                lambda param, default="": self.get_param_value(search.keyword, param)
-                or default
-            )
-            return {
-                "query": get_param("query"),
-                "transaction": get_param("transaction", "selling"),
-                "sort": get_param("sort", "created_at"),
-                "page": page,
-                "order": get_param("order", "desc"),
-            }
-        else:
-            return {
-                "query": search.keyword,
-                "transaction": "selling",
-                "sort": "created_at",
-                "page": page,
-                "order": "desc",
-            }
+            for param in ["query", "transaction", "sort", "order"]:
+                params[param] = self.get_param_value(
+                    search.keyword, param, params[param]
+                )
+
+        return params
 
     async def get_max_pages(self, search) -> int:
         res = await self.get_response(search, 1)
@@ -42,20 +35,21 @@ class Fril(BaseScrapy):
         hit_text = selector.css(
             "div.col-sm-12.col-xs-3.page-count.text-right::text"
         ).get()
-        hit_number = re.search(r"約(.+)件中", hit_text).group(1)
-        hit_number = hit_number.replace(",", "")
-        return await self.extract_number_from_content(hit_number, self.pageSize)
+        hit_number = re.sub(r"[^\d]", "", hit_text)
+
+        return await self.extract_number_from_content(hit_number, self.page_size)
 
     async def get_response_items(self, response):
         selector = Selector(response)
-        if selector is None:
-            return []
-        items = selector.css(".item-box")
-        return items
+        return selector.css(".item-box") if selector else []
 
     async def get_item_id(self, item: Selector):
-        product_url = await self.get_item_product_url(item, None)
-        return re.search("fril.jp/([0-9a-z]+)", product_url).group(1)
+        product_url = item.css(".item-box__image-wrapper a::attr(href)").get()
+        return (
+            re.search("fril.jp/([0-9a-z]+)", product_url).group(1)
+            if product_url
+            else None
+        )
 
     async def get_item_name(self, item: Selector):
         return item.css(".item-box__item-name span::text").get()
@@ -64,15 +58,11 @@ class Fril(BaseScrapy):
         price_text = (
             item.css(".item-box__item-price").xpath("./span[last()]/text()").get()
         )
-        price = float(re.sub(r"[^\d]", "", price_text))
-        return price
+        return float(re.sub(r"[^\d]", "", price_text)) if price_text else 0
 
     async def get_item_image_url(self, item: Selector, id: str):
-        image_url = item.css(
-            ".item-box__image-wrapper a img::attr(data-original)"
-        ).get()
         # image_url = re.sub(r"\?.*$", "", image_url_with_query)
-        return image_url
+        return item.css(".item-box__image-wrapper a img::attr(data-original)").get()
 
     async def get_item_product_url(self, item: Selector, id: str):
         return item.css(".item-box__image-wrapper a::attr(href)").get()

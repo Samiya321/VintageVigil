@@ -18,62 +18,50 @@ class JumpShop(BaseScrapy):
         )
 
     async def create_search_params(self, search, page: int) -> dict:
-        if "https" in search.keyword:
-            # 从 URL 解析参数
-            get_param = (
+        is_url_search = "https" in search.keyword
+        get_param = (
+            (
                 lambda param, default="": self.get_param_value(search.keyword, param)
                 or default
             )
-            return {
-                "q": get_param("q"),
-                "page": page,
-                "options[prefix]": get_param("options[prefix]", "last"),
-            }
-        else:
-            # 使用默认值
-            return {
-                "page": page,
-                "q": search.keyword,
-                "options[prefix]": "last",
-            }
+            if is_url_search
+            else lambda param, default="": default
+        )
+
+        return {
+            "q": get_param("q") if is_url_search else search.keyword,
+            "page": page,
+            "options[prefix]": get_param("options[prefix]", "last"),
+        }
 
     async def get_max_pages(self, search) -> int:
         res = await self.get_response(search, 1)
         selector = Selector(res)
-        meta_element = selector.css('meta[property="og:title"]')
-        content = meta_element.attrib["content"]
-        return await self.extract_number_from_content(content, self.pageSize)
+        content = selector.css('meta[property="og:title"]').attrib.get("content", "")
+        return await self.extract_number_from_content(content, self.page_size)
 
     async def get_response_items(self, response):
         selector = Selector(response)
-        if selector is None:
-            return []
-        items = selector.css("div.card-wrapper")
-        return items
+        return selector.css("div.card-wrapper") if selector else []
 
     async def get_item_id(self, item):
-        product_url = await self.get_item_product_url(item, None)
-        start_index = product_url.find("/products/") + len("/products/")
-        end_index = product_url.find("?", start_index)
-        return product_url[start_index:end_index]
+        product_url = item.css("a.full-unstyled-link::attr(href)").get()
+        return product_url.split("/products/")[1].split("?")[0] if product_url else None
 
     async def get_item_name(self, item):
         return item.css("span.card-information__text::text").get().strip()
 
     async def get_item_price(self, item):
         price_text = item.css("span.price-item--sale::text").get().strip()
-        price = float(price_text[1:].replace(",", ""))
-        return price
+        return float(price_text[1:].replace(",", "")) if price_text else 0
 
     async def get_item_image_url(self, item, id):
         image_url = item.css("img::attr(src)").get()
-        image_url = "https:" + image_url
-        # image_url = "https:" + image_url.split("?")[0]
-        return image_url
+        return f"https:{image_url}" if image_url else None
 
     async def get_item_product_url(self, item, id):
         product_link = item.css("a.full-unstyled-link::attr(href)").get()
-        return "https://jumpshop-online.com" + product_link
+        return f"https://jumpshop-online.com{product_link}" if product_link else None
 
     async def get_item_site(self):
         return "jumpshop"

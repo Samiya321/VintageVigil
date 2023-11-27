@@ -16,7 +16,7 @@ class Lashinbang(BaseScrapy):
             "pl": 1,
             "sort": getattr(search, "sort", "Number18%2CScore"),
             "limit": limit,
-            "o": (page - 1) * limit,  # 等同于page
+            "o": (page - 1) * limit,  # Offset calculation for pagination
             "n6l": 1,
             "callback": "callback",
             "controller": "lashinbang_front",
@@ -25,38 +25,31 @@ class Lashinbang(BaseScrapy):
     async def get_max_pages(self, search) -> int:
         res = await self.get_response(search, 1)
         data = json.loads(re.search(r"{.*}", res, re.DOTALL).group())
-        max_pages = data["kotohaco"]["result"]["info"]["last_page"]
-        return max_pages
+        return (
+            data.get("kotohaco", {})
+            .get("result", {})
+            .get("info", {})
+            .get("last_page", 0)
+        )
 
     async def get_response_items(self, response):
         data = json.loads(re.search(r"{.*}", response, re.DOTALL).group())
-        if (
-            not data
-            or "kotohaco" not in data
-            or "result" not in data["kotohaco"]
-            or "items" not in data["kotohaco"]["result"]
-        ):
-            return []  # 如果数据结构不完整或不存在，则返回空列表
-
-        items = data["kotohaco"]["result"]["items"]
-        return items
-
+        return data.get("kotohaco", {}).get("result", {}).get("items", [])
 
     async def get_item_id(self, item):
-        return item["itemid"]
+        return item.get("itemid")
 
     async def get_item_name(self, item):
-        return item["title"]
+        return item.get("title")
 
     async def get_item_price(self, item):
-        return item["price"]
+        return item.get("price")
 
     async def get_item_image_url(self, item, id):
-        image_url = item["image"]
-        return image_url
+        return item.get("image")
 
     async def get_item_product_url(self, item, id):
-        return item["url"]
+        return item.get("url")
 
     async def get_item_site(self):
         return "lashinbang"

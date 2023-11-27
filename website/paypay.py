@@ -13,49 +13,40 @@ class Paypay(BaseScrapy):
         )
 
     async def create_search_params(self, search, page: int) -> dict:
-        return {
+        # 使用字典推导式和getattr简化参数的创建
+        params = {
             "query": search.keyword,
-            "results": self.pageSize,
-            "imageShape": getattr(search, "imageShape", "square"),
-            "sort": getattr(search, "sort", "ranking"),
-            "order": getattr(search, "order", "ASC"),
-            "webp": getattr(search, "webp", "false"),
-            "module": getattr(search, "module", "catalog:hit:21"),
-            "itemStatus": getattr(search, "itemStatus", "open"),
-            "offset": (page - 1) * self.pageSize,
+            "results": self.page_size,
+            "offset": (page - 1) * self.page_size,
         }
+        for param in ["imageShape", "sort", "order", "webp", "module", "itemStatus"]:
+            params[param] = getattr(search, param, params.get(param, "default_value"))
+
+        return params
 
     async def get_max_pages(self, search) -> int:
         res = await self.get_response(search, 1)
         data = json.loads(re.search(r"{.*}", res.text, re.DOTALL).group())
-        max_pages = ceil(data["totalResultsAvailable"] / self.pageSize)
-        return max_pages
+        return ceil(data.get("totalResultsAvailable", 0) / self.page_size)
 
     async def get_response_items(self, response):
         data = json.loads(re.search(r"{.*}", response, re.DOTALL).group())
-        if not data or "items" not in data:
-            return []  # 当get_response返回None或无有效数据时，返回空列表
-
-        items = data["items"]
-        return items
-
+        return data.get("items", [])
 
     async def get_item_id(self, item):
-        return item["itemid"]
+        return item.get("itemid")
 
     async def get_item_name(self, item):
-        return item["title"]
+        return item.get("title")
 
     async def get_item_price(self, item):
-        return item["price"]
+        return item.get("price")
 
     async def get_item_image_url(self, item, id):
-        image_url = item["thumbnailImageUrl"]
-        return image_url
+        return item.get("thumbnailImageUrl")
 
     async def get_item_product_url(self, item, id):
-        product_url = "https://paypayfleamarket.yahoo.co.jp/item/{}".format(id)
-        return product_url
+        return f"https://paypayfleamarket.yahoo.co.jp/item/{id}"
 
     async def get_item_site(self):
         return "paypay"

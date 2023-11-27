@@ -5,32 +5,28 @@ from .common_imports import *
 
 
 class BaseScrapy(ABC):
-    def __init__(
-        self,
-        base_url,
-        page_size,
-        client,
-        headers=None,
-    ):
+    MAX_CONCURRENT_PAGES = 100  # Moved to a class-level constant
+    MAX_RETRIES = 3  # 定义最大重试次数
+    RETRY_DELAY = 1  # 定义初始重试延迟（秒）
+
+    def __init__(self, base_url, page_size, client, headers=None):
         self.base_url = base_url
-        self.pageSize = page_size
+        self.page_size = page_size
         self.headers = headers if headers else {}
         self.client = client
 
     async def search(
-        self, search, iteration_count
+        self, search_term, iteration_count
     ) -> AsyncGenerator[SearchResultItem, None]:
         # 获取最大页数
-        max_pages = await self.get_max_pages(search)
+        max_pages = await self.get_max_pages(search_term)
         if max_pages == 0:
             return  # 直接返回，不执行任何任务
 
-        # 分批处理每页任务，每批最多100页
-        maxConcurrentPages = 100
-        for start_page in range(1, max_pages + 1, maxConcurrentPages):
-            end_page = min(start_page + 99, max_pages)
+        for start_page in range(1, max_pages + 1, BaseScrapy.MAX_CONCURRENT_PAGES):
+            end_page = min(start_page + BaseScrapy.MAX_CONCURRENT_PAGES - 1, max_pages)
             tasks = (
-                self.fetch_products(search, page)
+                self.fetch_products(search_term, page)
                 for page in range(start_page, end_page + 1)
             )
             pages_content = await asyncio.gather(*tasks, return_exceptions=True)
@@ -50,22 +46,22 @@ class BaseScrapy(ABC):
 
     # 搜索具体页数里的内容
     async def fetch_products(
-        self, search, page: int
+        self, search_term, page: int
     ) -> AsyncGenerator[SearchResultItem, None]:
         # 获取响应体的text
-        res = await self.get_response(search, page)
-        if res is None:
-            logger.error(f"Failed to get response for page {page} in search '{search}'")
+        response_text = await self.get_response(search_term, page)
+        if response_text is None:
+            logger.error(
+                f"Failed to get response for page {page} in search '{search_term}'"
+            )
             return []
 
         # 获取商品信息，json格式或者Selecter
-        items = await self.get_response_items(res)
-
+        items = await self.get_response_items(response_text)
         # 如果商品列表为空，则直接返回[]
         if not items:
             return []
 
-        # 将商品列表中的商品封装为自己的格式
         tasks = (self.create_product_from_card(item) for item in items)
         return await asyncio.gather(*tasks)
 
@@ -73,14 +69,11 @@ class BaseScrapy(ABC):
     async def create_request_url(self, params):
         return self.base_url, params
 
-    async def get_response(self, search, page: int):
-        params = await self.create_search_params(search, page)
+    async def get_response(self, search_term, page: int):
+        params = await self.create_search_params(search_term, page)
         url, params = await self.create_request_url(params)
 
-        max_retries = 3  # 定义最大重试次数
-        retry_delay = 1  # 定义初始重试延迟（秒）
-
-        for attempt in range(max_retries):
+        for attempt in range(BaseScrapy.MAX_RETRIES):
             try:
                 response = await self.client.get(
                     url, params=params, headers=self.headers, timeout=20
@@ -92,63 +85,101 @@ class BaseScrapy(ABC):
                     logger.warning(
                         f"HTTP 404 not found for {e.response.url}. Stopping retries."
                     )
-                    return None  # 如果状态码为404，直接返回None
+                    return None
                 logger.warning(
-                    f"Retry {attempt + 1}/{max_retries} for {e.response.url} after status code {e.response.status_code}"
+                    f"Retry {attempt + 1}/{BaseScrapy.MAX_RETRIES} for {e.response.url} after status code {e.response.status_code}"
                 )
-                await asyncio.sleep(retry_delay)
+                await asyncio.sleep(BaseScrapy.RETRY_DELAY)
             except (httpx.RequestError, httpx.TimeoutException) as e:
                 logger.warning(
-                    f"Retry {attempt + 1}/{max_retries} due to network error: {e}"
+                    f"Retry {attempt + 1}/{BaseScrapy.MAX_RETRIES} due to network error: {e}"
                 )
-                await asyncio.sleep(retry_delay)
+                await asyncio.sleep(BaseScrapy.RETRY_DELAY)
             except Exception as e:
                 logger.error(f"An unexpected error occurred: {e}")
         else:
-            logger.error(f"Failed to get response after {max_retries} attempts")
+            logger.error(
+                f"Failed to get response after {BaseScrapy.MAX_RETRIES} attempts"
+            )
 
-        return None  # 如果所有重试均失败，返回 None
+        return None
 
     async def create_product_from_card(self, item) -> SearchResultItem:
+        """
+        Create a product object from an item card.
+
+        Args:
+            item: The item card to process.
+
+        Returns:
+            SearchResultItem: The processed product.
+        """
         name = await self.get_item_name(item)
+        product_id = await self.get_item_id(
+            item
+        )  # Renamed 'id' to 'product_id' for clarity
+        product_url = await self.get_item_product_url(item=item, id=product_id)
 
-        id = await self.get_item_id(item)
-
-        product_url = await self.get_item_product_url(item=item, id=id)
-
-        image_url = await self.get_item_image_url(item=item, id=id)
+        image_url = await self.get_item_image_url(item=item, id=product_id)
 
         price = await self.get_item_price(item)
 
         site = await self.get_item_site()
 
-        search_result_item = SearchResultItem(
+        return SearchResultItem(
             name=name,
             price=price,
             image_url=image_url,
             product_url=product_url,
-            id=id,
+            id=product_id,
             site=site,
         )
-        return search_result_item
 
-    async def extract_number_from_content(self, hit_number: str, page_size: int) -> int:
-        result = hit_number.replace(",", "")
-        result = re.search(r"\d+", result)
-        if result:
-            number = int(result.group())
-        else:
+    async def extract_number_from_content(
+        self, hit_number: str, page_size: int
+    ) -> Optional[int]:
+        """
+        Extracts a number from a string and calculates the number of pages based on the page size.
+
+        Args:
+            hit_number (str): The string containing the number.
+            page_size (int): The size of each page.
+
+        Returns:
+            Optional[int]: The total number of pages or None if no number is found.
+        """
+        try:
+            number = int(re.search(r"\d+", hit_number.replace(",", "")).group())
+            return ceil(number / page_size)
+        except AttributeError:
             logger.error("No number found")
-            return 0
-        return ceil(number / page_size)
+            return None
 
-    def get_param_value(self, url, param_name):
+    def get_param_value(self, url: str, param_name: str) -> Optional[str]:
+        """
+        Extracts the value of a specified parameter from a URL.
+
+        Args:
+            url (str): The URL to parse.
+            param_name (str): The name of the parameter to extract.
+
+        Returns:
+            Optional[str]: The value of the parameter or None if not found.
+        """
         parsed_url = parse.urlparse(url)
         query_params = parse.parse_qs(parsed_url.query)
         return query_params.get(param_name, [None])[0]
 
-    def encode_params(self, params):
-        # 自定义URL参数编码，排除页码为1的情况
+    def encode_params(self, params: dict) -> str:
+        """
+        Encodes URL parameters, excluding the 'page' parameter when its value is 1.
+
+        Args:
+            params (dict): The parameters to encode.
+
+        Returns:
+            str: The encoded URL parameters.
+        """
         return "&".join(
             f"{key}={value}"
             for key, value in params.items()
