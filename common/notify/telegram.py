@@ -37,8 +37,8 @@ class TelegramClient:
         max_retries = 3
 
         for attempt in range(max_retries):
-            modified_photo_url = photo_url
-            for retry in ["original", "random=64", "random=54"]:
+            for retry in ["random=64", "random=54", "original"]:
+                modified_photo_url = photo_url
                 if retry != "original":
                     if "?" in modified_photo_url:
                         modified_photo_url = modified_photo_url + "&" + retry
@@ -52,7 +52,7 @@ class TelegramClient:
                     logger.error(
                         f"Attempt {attempt + 1}, Retry: {retry}: Unexpected error during sending photo: {e}, photo_url: {modified_photo_url}"
                     )
-                    if retry == "random=54":  # 如果已经是最后一次重试
+                    if retry == "original":  # 如果已经是最后一次重试
                         break  # 退出内部循环，尝试下一次外部重试
 
             # 如果所有重试均失败，将执行下一个外部重试
@@ -60,8 +60,8 @@ class TelegramClient:
     async def send_news(self, message: str, photo_url: str):
         max_retries = 3
         for attempt in range(max_retries):
-            modified_photo_url = photo_url
-            for retry in ["original", "random=64", "random=54"]:
+            for retry in ["random=64", "random=54", "original"]:
+                modified_photo_url = photo_url
                 if retry != "original":
                     if "?" in modified_photo_url:
                         modified_photo_url = modified_photo_url + "&" + retry
@@ -83,7 +83,7 @@ class TelegramClient:
                     logger.error(
                         f"Attempt {attempt + 1}, Retry: {retry}: Unexpected error during sending news: {e}, photo_url: {modified_photo_url}"
                     )
-                    if retry == "random=54":  # 如果已经是最后一次重试
+                    if retry == "original":  # 如果已经是最后一次重试
                         break  # 退出内部循环，尝试下一次外部重试
 
             # 如果所有重试均失败，将执行下一个外部重试
