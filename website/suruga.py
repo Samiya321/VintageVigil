@@ -15,73 +15,62 @@ class Suruga(BaseScrapy):
         return final_url, None
 
     async def create_search_params(self, search, page: int) -> dict:
-        if "https" in search.keyword:
-            # 从 URL 解析参数
-            get_param = (
+        # 判断搜索关键字是否为URL
+        is_url = "https" in search.keyword
+        get_param = (
+            (
                 lambda param, default="": self.get_param_value(search.keyword, param)
                 or default
             )
-            return {
-                "category": get_param("category"),
-                "search_word": get_param("search_word"),
-                "rankBy": get_param("rankBy", "modificationTime:descending"),
-                "hendou": get_param("hendou"),
-                "page": page,
-                "adult_s": get_param("adult_s", 1),
-                "inStock": get_param("inStock", "Off"),
-            }
-        else:
-            # 使用默认值
-            return {
-                "category": "",
-                "search_word": search.keyword,
-                "rankBy": "modificationTime:descending",
-                "page": page,
-                "adult_s": 1,
-                "inStock": "Off",
-            }
+            if is_url
+            else lambda param, default="": default
+        )
+
+        return {
+            "category": get_param("category") if is_url else "",
+            "search_word": get_param("search_word") if is_url else search.keyword,
+            "rankBy": get_param("rankBy", "modificationTime:descending"),
+            "hendou": get_param("hendou"),
+            "page": page,
+            "adult_s": get_param("adult_s", 1),
+            "inStock": get_param("inStock", "Off"),
+        }
 
     async def get_max_pages(self, search) -> int:
         res = await self.get_response(search, 1)
         selector = Selector(res)
         hit_element = selector.css("div.hit").get()
         hit_number = re.search(r"該当件数:(.+)件中", hit_element).group(1)
-        return await self.extract_number_from_content(hit_number, self.pageSize)
+        return await self.extract_number_from_content(hit_number, self.page_size)
 
     async def get_response_items(self, response):
         selector = Selector(response)
-        if selector is None:
-            return []
-        items = selector.css("div.item:has(div.item_detail)")
-        return items
+        return selector.css("div.item:has(div.item_detail)") if selector else []
 
     async def get_item_name(self, item):
         return item.css("p.title a::text").get()
 
     async def get_item_id(self, item):
         url = item.css("p.title a::attr(href)").get()
-        item_id = re.search(r"(\d+)", url).group(1)
-        return item_id
+        return re.search(r"(\d+)", url).group(1) if url else None
 
     async def get_item_image_url(self, item, id):
-        return "https://www.suruga-ya.jp/database/photo.php?shinaban={}&size=m".format(
-            id
-        )
+        return f"https://www.suruga-ya.jp/database/photo.php?shinaban={id}&size=m"
         # return "https://www.suruga-ya.jp/database/pics_light/game/{}.jpg".format(id)
 
     async def get_item_product_url(self, item, id):
-        return "https://www.suruga-ya.jp/product/detail/{}".format(id)
+        return f"https://www.suruga-ya.jp/product/detail/{id}"
 
     async def get_item_price(self, item):
         """
-        Extracts and returns the price from a given item element.
+        Extracts and returns the minimum available price from a given item element.
         Handles different scenarios like regular price, out-of-stock, and price_teika.
 
         Args:
         item (Selector): The selector object for the item from which the price is to be extracted.
 
         Returns:
-        float: The extracted price as a float, or None if no price is found.
+        float: The lowest extracted price as a float, or 0 if no valid price is found.
         """
 
         def extract_price(text):
@@ -92,43 +81,35 @@ class Suruga(BaseScrapy):
             text (str): The price text to be converted.
 
             Returns:
-            float: The converted price.
+            float: The converted price or 0 if conversion fails.
             """
             replace_chars = str.maketrans("", "", "中古：税込定価：新品：￥,")
             try:
-                price = float(text.translate(replace_chars).strip())
-                return price
+                return float(text.translate(replace_chars).strip())
             except ValueError:
                 return 0
 
-        # Extract the main price or the out-of-stock price
-        price = item.css("p.price::text").get()
-        if price:
-            price = price.strip()
-            if price == "品切れ":
-                price_elements = item.css(
-                    "div.item_price div p.mgnB5.mgnT5 span.text-red.fontS15 strong::text"
-                ).get()
-                return extract_price(price_elements) if price_elements else 0
-            else:
-                return extract_price(price)
+        prices = []
 
-        # Extract the price_teika if main price is not available
-        price_teika_elements = item.css("p.price_teika")
-        if price_teika_elements:
-            # 尝试从 <strong> 标签获取文本
-            price_teika = price_teika_elements.css("strong::text").get()
-            if price_teika is None:
-                # 如果没有找到，回退到使用第一个元素的文本
-                price_teika = price_teika_elements[0].css("::text").get()
-                if price_teika is None:
-                    price_teika = 0
+        # Extract official store price, if available
+        official_price = item.css("p.price::text").get()
+        if official_price and official_price.strip() != "品切れ":
+            prices.append(extract_price(official_price))
 
-            price_teika = extract_price(price_teika)
+        # Extract third-party store price, if available
+        third_party_price_text = item.css(
+            "div.item_price div p.mgnB5.mgnT5 span.text-red.fontS15 strong::text"
+        ).get()
+        if third_party_price_text:
+            prices.append(extract_price(third_party_price_text))
 
-            return price_teika
+        # Extract highlighted price_teika, if available
+        highlighted_price_text = item.css("p.price_teika strong::text").get()
+        if highlighted_price_text:
+            prices.append(extract_price(highlighted_price_text))
 
-        return 0
+        # Return the minimum valid price found, or 0 if none
+        return min(prices, default=0)
 
     async def get_item_site(self):
         return "suruga"
