@@ -88,7 +88,6 @@ class BaseSearch:
             logger.error(error_message)
             if attempt < max_retries - 1:
                 await asyncio.sleep(retry_delay)
-                retry_delay *= 2  # Exponential backoff
             else:
                 logger.error(f"Failed after {max_retries} attempts.")
                 break
