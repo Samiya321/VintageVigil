@@ -77,8 +77,8 @@ class BaseSearch:
             except httpx.HTTPStatusError as e:
                 if e.response.status_code == 503:
                     error_message = f"Service unavailable (503) on attempt {attempt + 1}, will retry after delay."
-                    # 503 时增加等待时间
-                    retry_delay = 0.5
+                    # 503 时直接重试
+                    continue
                 else:
                     error_message = (
                         f"HTTP error {e.response.status_code} on attempt {attempt + 1}"
@@ -91,12 +91,9 @@ class BaseSearch:
 
             # 记录错误消息并处理重试逻辑
             logger.error(error_message)
-            if attempt < max_retries - 1:
-                await asyncio.sleep(retry_delay)
-            else:
-                logger.error(f"Failed after {max_retries} attempts.")
-                break
+            # await asyncio.sleep(retry_delay)
 
+        logger.error(f"Failed after {max_retries} attempts.")
         return None
 
     def create_headers(self, method):
