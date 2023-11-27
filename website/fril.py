@@ -68,12 +68,10 @@ class Fril(BaseScrapy):
         return price
 
     async def get_item_image_url(self, item: Selector, id: str):
-        image_url_with_query = item.css(
+        image_url = item.css(
             ".item-box__image-wrapper a img::attr(data-original)"
         ).get()
-        image_url = re.sub(r"\?.*$", "", image_url_with_query)
-        # 加上random=64，避免tg服务器无法解析链接
-        # image_url = image_url + "?random=64"
+        # image_url = re.sub(r"\?.*$", "", image_url_with_query)
         return image_url
 
     async def get_item_product_url(self, item: Selector, id: str):

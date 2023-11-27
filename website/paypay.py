@@ -51,9 +51,7 @@ class Paypay(BaseScrapy):
 
     # TODO 目前TG服务器无法解析图片链接
     async def get_item_image_url(self, item, id):
-        # 加上random=64，避免tg服务器无法解析链接
         image_url = item["thumbnailImageUrl"]
-        image_url = image_url + "&random=64"
         return image_url
 
     async def get_item_product_url(self, item, id):

@@ -52,8 +52,7 @@ class Lashinbang(BaseScrapy):
         return item["price"]
 
     async def get_item_image_url(self, item, id):
-        # 加上random=64，避免tg服务器无法解析链接
-        image_url = item["image"] + "?random=64"
+        image_url = item["image"]
         return image_url
 
     async def get_item_product_url(self, item, id):

@@ -135,17 +135,17 @@ class BaseSearch:
         image_type = "image"
         if id[0] == "m" and id[1:].isdigit():
             if image_type == "image":
-                # image_url = "https://static.mercdn.net/item/detail/orig/photos/{}_1.jpg?random=64".format(id)
-                image_url = "https://static.mercdn.net/c!/w=360,f=webp/item/detail/orig/photos/{}_1.jpg?random=64".format(
+                # image_url = "https://static.mercdn.net/item/detail/orig/photos/{}_1.jpg".format(id)
+                image_url = "https://static.mercdn.net/c!/w=360,f=webp/item/detail/orig/photos/{}_1.jpg".format(
                     id
                 )
             else:
-                # image_url = "https://static.mercdn.net/thumb/photos/{}_1.jpg?random=64".format(id)
+                # image_url = "https://static.mercdn.net/thumb/photos/{}_1.jpg".format(id)
 
-                image_url = item["thumbnails"][0] + "?random=64"
+                image_url = item["thumbnails"][0]
 
         else:
-            image_url = item["thumbnails"][0] + "?random=64"
+            image_url = item["thumbnails"][0]
 
         # 组合商品信息
         item = SearchResultItem(

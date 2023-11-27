@@ -22,7 +22,6 @@ class TelegramClient:
 
     async def send_text(self, message: str):
         max_retries = 3
-        # retry_delay = 1  # 1 second
 
         for attempt in range(max_retries):
             try:
@@ -32,49 +31,62 @@ class TelegramClient:
                 logger.error(
                     f"Attempt {attempt + 1}: Unexpected error during sending text: {e}"
                 )
-                # if attempt < max_retries - 1:
-                #     await asyncio.sleep(retry_delay)
-                #     retry_delay *= 2  # 指数退避
+
 
     async def send_photo(self, photo_url: str):
         max_retries = 3
-        # retry_delay = 1
 
         for attempt in range(max_retries):
-            try:
-                await self.bot.send_photo(self.chat_id, photo=photo_url)
-                return
-            except Exception as e:
-                logger.error(
-                    f"Attempt {attempt + 1}: Unexpected error during sending photo: {e}"
-                )
-                # if attempt < max_retries - 1:
-                #     await asyncio.sleep(retry_delay)
-                #     retry_delay *= 2
+            modified_photo_url = photo_url
+            for retry in ["original", "random=64", "random=54"]:
+                if retry != "original":
+                    if "?" in modified_photo_url:
+                        modified_photo_url = modified_photo_url + "&" + retry
+                    else:
+                        modified_photo_url = modified_photo_url + "?" + retry
+
+                try:
+                    await self.bot.send_photo(self.chat_id, photo=modified_photo_url)
+                    return  # 成功发送，退出函数
+                except Exception as e:
+                    logger.error(
+                        f"Attempt {attempt + 1}, Retry: {retry}: Unexpected error during sending photo: {e}, photo_url: {modified_photo_url}"
+                    )
+                    if retry == "random=54":  # 如果已经是最后一次重试
+                        break  # 退出内部循环，尝试下一次外部重试
+
+            # 如果所有重试均失败，将执行下一个外部重试
 
     async def send_news(self, message: str, photo_url: str):
         max_retries = 3
-        # retry_delay = 1
-
         for attempt in range(max_retries):
-            try:
-                start_time = time.time()
-                await self.bot.send_photo(
-                    self.chat_id, photo=photo_url, caption=message
-                )
-                end_time = time.time()
-                notification_time = end_time - start_time
-                logger.info(
-                    f"Notification for item sent in {notification_time:.2f} seconds"
-                )
-                return
-            except Exception as e:
-                logger.error(
-                    f"Attempt {attempt + 1}: Unexpected error during sending news: {e}, photo_url: {photo_url}"
-                )
-                # if attempt < max_retries - 1:
-                #     await asyncio.sleep(retry_delay)
-                #     retry_delay *= 2
+            modified_photo_url = photo_url
+            for retry in ["original", "random=64", "random=54"]:
+                if retry != "original":
+                    if "?" in modified_photo_url:
+                        modified_photo_url = modified_photo_url + "&" + retry
+                    else:
+                        modified_photo_url = modified_photo_url + "?" + retry
+
+                try:
+                    start_time = time.time()
+                    await self.bot.send_photo(
+                        self.chat_id, photo=modified_photo_url, caption=message
+                    )
+                    end_time = time.time()
+                    notification_time = end_time - start_time
+                    logger.info(
+                        f"Notification for item sent in {notification_time:.2f} seconds"
+                    )
+                    return  # 成功发送，退出函数
+                except Exception as e:
+                    logger.error(
+                        f"Attempt {attempt + 1}, Retry: {retry}: Unexpected error during sending news: {e}, photo_url: {modified_photo_url}"
+                    )
+                    if retry == "random=54":  # 如果已经是最后一次重试
+                        break  # 退出内部循环，尝试下一次外部重试
+
+            # 如果所有重试均失败，将执行下一个外部重试
 
     async def send_message(self, message: str, photo_url=""):
         try:

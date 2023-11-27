@@ -67,9 +67,8 @@ class JumpShop(BaseScrapy):
 
     async def get_item_image_url(self, item, id):
         image_url = item.css("img::attr(src)").get()
-        image_url = "https:" + image_url.split("?")[0]
-        # 加上random=64，避免tg服务器无法解析链接
-        image_url = image_url + "?random=64"
+        image_url = "https:" + image_url
+        # image_url = "https:" + image_url.split("?")[0]
         return image_url
 
     async def get_item_product_url(self, item, id):
