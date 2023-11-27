@@ -50,6 +50,8 @@ async def process_search_keyword(
                         unique_products.add(product_key)
                         products_to_process.append(product_info)
 
+                # 创建一个空列表来收集异步任务
+                notification_tasks = []
                 for item in database.upsert_products(
                     products_to_process,
                     search_query.keyword,
@@ -59,6 +61,7 @@ async def process_search_keyword(
                         price_currency = item["price"] * website_config.exchange_rate
                         if item.get("pre_price") is not None:
                             item["price"] = f"{item['pre_price']} 円 ==> {item['price']}"
+
                         message = message_template.substitute(
                             priceStatus=get_price_status_string(item["price_change"]),
                             productName=item["name"],
@@ -66,13 +69,20 @@ async def process_search_keyword(
                             price=item["price"],
                             priceCurrency=f"{price_currency:.2f}",
                         )
+                        # 创建并添加异步任务到列表
                         try:
                             notify_client = notification_clients[search_query.notify]
-                            await send_notification(notify_client, message, item)
+                            task = send_notification(notify_client, message, item)
+                            notification_tasks.append(task)
+
                             item_id = item["id"]
-                            logger.info(f"Notification for item sent: {item_id}")
+                            logger.info(f"Notification sent for item: {item_id}")
                         except Exception as e:
-                            logger.error(f"Error sending notification: {e}")
+                            logger.error(f"Error preparing notification: {e}")
+
+                # 循环结束后，使用 asyncio.gather 并发执行所有收集到的异步任务
+                if notification_tasks:
+                    await asyncio.gather(*notification_tasks, return_exceptions=True)
 
                 iteration_count += 1
                 await asyncio.sleep(website_config.delay)
