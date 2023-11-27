@@ -49,7 +49,6 @@ class Paypay(BaseScrapy):
     async def get_item_price(self, item):
         return item["price"]
 
-    # TODO 目前TG服务器无法解析图片链接
     async def get_item_image_url(self, item, id):
         image_url = item["thumbnailImageUrl"]
         return image_url
