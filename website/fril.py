@@ -1,7 +1,7 @@
 from parsel import Selector
 
 from .base.scraper import BaseScrapy
-
+import re
 
 class Fril(BaseScrapy):
     def __init__(self):
