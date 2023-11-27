@@ -54,7 +54,7 @@ class Fril(BaseScrapy):
         return items
 
     async def get_item_id(self, item: Selector):
-        product_url = self.get_item_product_url(item, None)
+        product_url = await self.get_item_product_url(item, None)
         return re.search("fril.jp/([0-9a-z]+)", product_url).group(1)
 
     async def get_item_name(self, item: Selector):

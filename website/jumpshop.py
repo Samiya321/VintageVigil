@@ -52,7 +52,7 @@ class JumpShop(BaseScrapy):
         return items
 
     async def get_item_id(self, item):
-        product_url = self.get_item_product_url(item, None)
+        product_url = await self.get_item_product_url(item, None)
         start_index = product_url.find("/products/") + len("/products/")
         end_index = product_url.find("?", start_index)
         return product_url[start_index:end_index]
