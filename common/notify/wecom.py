@@ -2,17 +2,12 @@ from datetime import datetime, timedelta
 from io import BytesIO
 
 from loguru import logger
+import httpx
 
 
 class WecomClient:
     def __init__(
-        self,
-        corp_id,
-        corp_secret,
-        agent_id,
-        user_id,
-        httpx_client, 
-        send_type="news",
+        self, corp_id, corp_secret, agent_id, user_id, httpx_client, send_type="news"
     ):
         self.corp_id = corp_id
         self.corp_secret = corp_secret
@@ -39,6 +34,9 @@ class WecomClient:
         ):
             return self.access_token
 
+        return await self._fetch_access_token()
+
+    async def _fetch_access_token(self):
         url = f"https://qyapi.weixin.qq.com/cgi-bin/gettoken?corpid={self.corp_id}&corpsecret={self.corp_secret}"
         try:
             response = await self.client.get(url)
@@ -53,108 +51,98 @@ class WecomClient:
 
     async def upload_image_get_media_id(self, image_url):
         access_token = await self.get_access_token()
-        if access_token:
-            upload_url = f"https://qyapi.weixin.qq.com/cgi-bin/media/upload?access_token={access_token}&type=image"
-            try:
-                # 下载图片
-                image_response = await self.client.get(image_url)
-                image_response.raise_for_status()
-
-                # 上传图片
-                files = {"media": BytesIO(image_response.content)}
-                response = await self.client.post(upload_url, files=files)
-                result = response.json()
-                return result.get("media_id")
-            except Exception as e:
-                logger.error(f"上传图片失败: {e}")
-                return None
-        else:
+        if not access_token:
             return None
+
+        return await self._upload_image(image_url, access_token)
+
+    async def _upload_image(self, image_url, access_token):
+        upload_url = f"https://qyapi.weixin.qq.com/cgi-bin/media/upload?access_token={access_token}&type=image"
+        try:
+            image_response = await self.client.get(image_url)
+            image_response.raise_for_status()
+
+            files = {"media": BytesIO(image_response.content)}
+            response = await self.client.post(upload_url, files=files)
+            return response.json().get("media_id")
+        except Exception as e:
+            logger.error(f"上传图片失败: {e}")
+            return None
+
+    async def _send_wechat_message(self, url, message_payload):
+        try:
+            response = await self.client.post(url, json=message_payload)
+            return response.json()
+        except Exception as e:
+            logger.error(f"消息发送失败: {e}")
+            return {"error": "Failed to send message"}
 
     async def send_text(self, message: str):
         access_token = await self.get_access_token()
-        if access_token:
-            url = f"https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token={access_token}"
-            message = {
-                "touser": self.user_id,
-                "msgtype": "text",
-                "agentid": self.agent_id,
-                "text": {"content": message},
-            }
-            try:
-                response = await self.client.post(url, json=message)
-                return response.json()
-            except Exception as e:
-                logger.error(f"发送文本消息失败: {e}")
-                return {"error": "Failed to send text message"}
-        else:
+        if not access_token:
             return {"error": "Failed to get access token"}
+
+        url = f"https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token={access_token}"
+        payload = {
+            "touser": self.user_id,
+            "msgtype": "text",
+            "agentid": self.agent_id,
+            "text": {"content": message},
+        }
+        return await self._send_wechat_message(url, payload)
 
     async def send_photo(self, photo_url: str):
         media_id = await self.upload_image_get_media_id(photo_url)
-        if media_id:
-            access_token = await self.get_access_token()
-            if access_token:
-                url = f"https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token={access_token}"
-                message = {
-                    "touser": self.user_id,
-                    "msgtype": "image",
-                    "agentid": self.agent_id,
-                    "image": {"media_id": media_id},
-                }
-                try:
-                    response = await self.client.post(url, json=message)
-                    return response.json()
-                except Exception as e:
-                    logger.error(f"发送图片消息失败: {e}")
-                    return {"error": "Failed to send image message"}
-            else:
-                return {"error": "Failed to get access token"}
-        else:
+        if not media_id:
             return {"error": "Failed to upload image"}
+
+        access_token = await self.get_access_token()
+        if not access_token:
+            return {"error": "Failed to get access token"}
+
+        url = f"https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token={access_token}"
+        payload = {
+            "touser": self.user_id,
+            "msgtype": "image",
+            "agentid": self.agent_id,
+            "image": {"media_id": media_id},
+        }
+        return await self._send_wechat_message(url, payload)
 
     async def send_news(
         self, message: str, photo_url: str, message_url: str, title: str
     ):
         access_token = await self.get_access_token()
-        if access_token:
-            url = f"https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token={access_token}"
-            message = {
-                "touser": self.user_id,
-                "msgtype": "news",
-                "agentid": self.agent_id,
-                "news": {
-                    "articles": [
-                        {
-                            "title": title,
-                            "description": message,
-                            "picurl": photo_url,
-                            "url": message_url,
-                        }
-                    ]
-                },
-            }
-            try:
-                response = await self.client.post(url, json=message)
-                return response.json()
-            except Exception as e:
-                logger.error(f"发送图文消息失败: {e}")
-                return {"error": "Failed to send news message"}
-        else:
+        if not access_token:
             return {"error": "Failed to get access token"}
+
+        url = f"https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token={access_token}"
+        payload = {
+            "touser": self.user_id,
+            "msgtype": "news",
+            "agentid": self.agent_id,
+            "news": {
+                "articles": [
+                    {
+                        "title": title,
+                        "description": message,
+                        "picurl": photo_url,
+                        "url": message_url,
+                    }
+                ]
+            },
+        }
+        return await self._send_wechat_message(url, payload)
 
     async def send_message(
         self, message: str, photo_url: str = "", message_url="", title=""
     ):
         if self.send_type == "text":
-            await self.send_text(message)
-        elif self.send_type == "photo":
-            if photo_url:
-                # 先发送图片，然后发送文本
-                await self.send_photo(photo_url)
-                await self.send_text(message)
-            else:
-                # 如果没有图片URL，只发送文本
-                await self.send_text(message)
+            return await self.send_text(message)
+        elif self.send_type == "photo" and photo_url:
+            return await self.send_photo(photo_url)
         elif self.send_type == "news":
-            await self.send_news(message, photo_url, message_url, title)
+            return await self.send_news(message, photo_url, message_url, title)
+        else:
+            logger.warning(f"未知的发送类型: {self.send_type}")
+            return {"error": "Unknown send type"}
