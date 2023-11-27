@@ -6,7 +6,7 @@ logs/
 __pycache__/
 
 # 数据库文件
-*.db
+*.db*
 *.sqlite
 *.sqlite3
 
