@@ -41,28 +41,6 @@ class Lashinbang(BaseScrapy):
         items = data["kotohaco"]["result"]["items"]
         return items
 
-    async def create_product_from_card(self, item) -> SearchResultItem:
-        name = await self.get_item_name(item)
-
-        product_url = await self.get_item_product_url(item)
-
-        id = await self.get_item_id(item)
-
-        image_url = await self.get_item_image_url(item)
-
-        price = await self.get_item_price(item)
-
-        site = await self.get_item_site()
-
-        search_result_item = SearchResultItem(
-            name=name,
-            price=price,
-            image_url=image_url,
-            product_url=product_url,
-            id=id,
-            site=site,
-        )
-        return search_result_item
 
     async def get_item_id(self, item):
         return item["itemid"]
@@ -73,12 +51,12 @@ class Lashinbang(BaseScrapy):
     async def get_item_price(self, item):
         return item["price"]
 
-    async def get_item_image_url(self, item):
+    async def get_item_image_url(self, item, id):
         # 加上random=64，避免tg服务器无法解析链接
         image_url = item["image"] + "?random=64"
         return image_url
 
-    async def get_item_product_url(self, item):
+    async def get_item_product_url(self, item, id):
         return item["url"]
 
     async def get_item_site(self):

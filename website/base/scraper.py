@@ -70,7 +70,7 @@ class BaseScrapy(ABC):
 
     async def get_response(self, search, page: int):
         params = await self.create_search_params(search, page)
-        
+
         url, params = await self.create_request_url(params)
 
         max_retries = 5  # 定义最大重试次数
@@ -105,11 +105,11 @@ class BaseScrapy(ABC):
     async def create_product_from_card(self, item) -> SearchResultItem:
         name = await self.get_item_name(item)
 
-        product_url = await self.get_item_product_url(item)
+        id = await self.get_item_id(item)
 
-        id = await self.get_item_id(product_url)
+        product_url = await self.get_item_product_url(item=item, id=id)
 
-        image_url = await self.get_item_image_url(item)
+        image_url = await self.get_item_image_url(item=item, id=id)
 
         price = await self.get_item_price(item)
 
@@ -173,11 +173,11 @@ class BaseScrapy(ABC):
         pass
 
     @abstractmethod
-    async def get_item_image_url(self, item):
+    async def get_item_image_url(self, item, id):
         pass
 
     @abstractmethod
-    async def get_item_product_url(self, item):
+    async def get_item_product_url(self, item, id):
         pass
 
     @abstractmethod

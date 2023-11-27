@@ -3,6 +3,7 @@ from parsel import Selector
 from .base.scraper import BaseScrapy
 import re
 
+
 class Fril(BaseScrapy):
     def __init__(self):
         headers = {
@@ -17,7 +18,7 @@ class Fril(BaseScrapy):
             # 从 URL 解析参数
             get_param = (
                 lambda param, default="": self.get_param_value(search.keyword, param)
-                                          or default
+                or default
             )
             return {
                 "query": get_param("query"),
@@ -52,7 +53,8 @@ class Fril(BaseScrapy):
         items = selector.css(".item-box")
         return items
 
-    async def get_item_id(self, product_url: str):
+    async def get_item_id(self, item: Selector):
+        product_url = self.get_item_product_url(item, None)
         return re.search("fril.jp/([0-9a-z]+)", product_url).group(1)
 
     async def get_item_name(self, item: Selector):
@@ -65,7 +67,7 @@ class Fril(BaseScrapy):
         price = float(re.sub(r"[^\d]", "", price_text))
         return price
 
-    async def get_item_image_url(self, item: Selector):
+    async def get_item_image_url(self, item: Selector, id: str):
         image_url_with_query = item.css(
             ".item-box__image-wrapper a img::attr(data-original)"
         ).get()
@@ -74,7 +76,7 @@ class Fril(BaseScrapy):
         # image_url = image_url + "?random=64"
         return image_url
 
-    async def get_item_product_url(self, item: Selector):
+    async def get_item_product_url(self, item: Selector, id: str):
         return item.css(".item-box__image-wrapper a::attr(href)").get()
 
     async def get_item_site(self):

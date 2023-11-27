@@ -39,28 +39,6 @@ class Paypay(BaseScrapy):
         items = data["items"]
         return items
 
-    async def create_product_from_card(self, item) -> SearchResultItem:
-        name = await self.get_item_name(item)
-
-        id = await self.get_item_id(item)
-
-        product_url = await self.get_item_product_url(id)
-
-        image_url = await self.get_item_image_url(item)
-
-        price = await self.get_item_price(item)
-
-        site = await self.get_item_site()
-
-        search_result_item = SearchResultItem(
-            name=name,
-            price=price,
-            image_url=image_url,
-            product_url=product_url,
-            id=id,
-            site=site,
-        )
-        return search_result_item
 
     async def get_item_id(self, item):
         return item["itemid"]
@@ -72,13 +50,13 @@ class Paypay(BaseScrapy):
         return item["price"]
 
     # TODO 目前TG服务器无法解析图片链接
-    async def get_item_image_url(self, item):
+    async def get_item_image_url(self, item, id):
         # 加上random=64，避免tg服务器无法解析链接
         image_url = item["thumbnailImageUrl"]
         image_url = image_url + "&random=64"
         return image_url
 
-    async def get_item_product_url(self, id):
+    async def get_item_product_url(self, item, id):
         product_url = "https://paypayfleamarket.yahoo.co.jp/item/{}".format(id)
         return product_url
 

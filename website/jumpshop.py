@@ -51,7 +51,8 @@ class JumpShop(BaseScrapy):
         items = selector.css("div.card-wrapper")
         return items
 
-    async def get_item_id(self, product_url: str):
+    async def get_item_id(self, item):
+        product_url = self.get_item_product_url(item, None)
         start_index = product_url.find("/products/") + len("/products/")
         end_index = product_url.find("?", start_index)
         return product_url[start_index:end_index]
@@ -64,14 +65,14 @@ class JumpShop(BaseScrapy):
         price = float(price_text[1:].replace(",", ""))
         return price
 
-    async def get_item_image_url(self, item):
+    async def get_item_image_url(self, item, id):
         image_url = item.css("img::attr(src)").get()
         image_url = "https:" + image_url.split("?")[0]
         # 加上random=64，避免tg服务器无法解析链接
         image_url = image_url + "?random=64"
         return image_url
 
-    async def get_item_product_url(self, item):
+    async def get_item_product_url(self, item, id):
         product_link = item.css("a.full-unstyled-link::attr(href)").get()
         return "https://jumpshop-online.com" + product_link
 

@@ -55,29 +55,6 @@ class Suruga(BaseScrapy):
         items = selector.css("div.item:has(div.item_detail)")
         return items
 
-    async def create_product_from_card(self, item) -> SearchResultItem:
-        name = await self.get_item_name(item)
-
-        id = await self.get_item_id(item)
-
-        product_url = await self.get_item_product_url(id)
-
-        image_url = await self.get_item_image_url(id)
-
-        price = await self.get_item_price(item)
-
-        site = await self.get_item_site()
-
-        search_result_item = SearchResultItem(
-            name=name,
-            price=price,
-            image_url=image_url,
-            product_url=product_url,
-            id=id,
-            site=site,
-        )
-        return search_result_item
-
     async def get_item_name(self, item):
         return item.css("p.title a::text").get()
 
@@ -86,15 +63,15 @@ class Suruga(BaseScrapy):
         item_id = re.search(r"(\d+)", url).group(1)
         return item_id
 
-    async def get_item_image_url(self, item_id):
+    async def get_item_image_url(self, item, id):
         # 加上random=64，避免tg服务器无法解析链接
         return "https://www.suruga-ya.jp/database/photo.php?shinaban={}&size=m&random=54".format(
-            item_id
+            id
         )
         # return "https://www.suruga-ya.jp/database/pics_light/game/{}.jpg&random=54".format(id)
 
-    async def get_item_product_url(self, item_id):
-        return "https://www.suruga-ya.jp/product/detail/{}".format(item_id)
+    async def get_item_product_url(self, item, id):
+        return "https://www.suruga-ya.jp/product/detail/{}".format(id)
 
     async def get_item_price(self, item):
         """
