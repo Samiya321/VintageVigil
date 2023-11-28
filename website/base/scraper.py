@@ -52,7 +52,7 @@ class BaseScrapy(ABC):
         response_text = await self.get_response(search_term, page)
         if response_text is None:
             logger.error(
-                f"Failed to get response for page {page} in search '{search_term}'"
+                f"Failed to get response for page {page}'"
             )
             return []
 
