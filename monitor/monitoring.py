@@ -1,4 +1,3 @@
-# monitoring.py
 import asyncio
 from string import Template
 

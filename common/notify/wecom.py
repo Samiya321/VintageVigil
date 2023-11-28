@@ -2,7 +2,6 @@ from datetime import datetime, timedelta
 from io import BytesIO
 
 from loguru import logger
-import httpx
 
 
 class WecomClient:
@@ -140,7 +139,9 @@ class WecomClient:
         if self.send_type == "text":
             return await self.send_text(message)
         elif self.send_type == "photo" and photo_url:
-            return await self.send_photo(photo_url)
+            await self.send_photo(photo_url)
+            await self.send_text(message)
+            return
         elif self.send_type == "news":
             return await self.send_news(message, photo_url, message_url, title)
         else:
