@@ -4,6 +4,24 @@ user = "Admin"
 telegram_chat_id = "5710592740"
 wecom_user_id = "LongXiang"
 tg_send_type = 3
+we_send_type = 2
+
+[websites.fril]
+enabled = true
+delay = 600
+[[websites.fril.searches]]
+keyword = "家庭教師ヒットマンREBORN"
+notify = 3
+
+[websites.jumpshop]
+enabled = true
+delay = 1200
+[[websites.jumpshop.searches]]
+keyword = "呪術廻戦"
+notify = 2
+[[websites.jumpshop.searches]]
+keyword = "家庭教師ヒットマンREBORN"
+notify = 2
 
 [websites.lashinbang]
 enabled = true
@@ -14,7 +32,7 @@ notify = 2
 
 [websites.mercari]
 enabled = true
-delay = 0.5
+delay = 1
 [[websites.mercari.searches]]
 keyword = "家庭教師ヒットマンREBORN"
 notify = 1
@@ -38,17 +56,12 @@ notify = 2
 keyword = "862829897"
 notify = 2
 
-
-[websites.jumpshop]
+[websites.paypay]
 enabled = true
-delay = 1200
-[[websites.jumpshop.searches]]
-keyword = "呪術廻戦"
-notify = 2
-[[websites.jumpshop.searches]]
+delay = 600
+[[websites.paypay.searches]]
 keyword = "家庭教師ヒットマンREBORN"
-notify = 2
-
+notify = 3
 
 [websites.suruga]
 enabled = true
