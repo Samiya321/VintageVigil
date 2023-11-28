@@ -25,10 +25,10 @@ class BaseScrapy(ABC):
 
         for start_page in range(1, max_pages + 1, BaseScrapy.MAX_CONCURRENT_PAGES):
             end_page = min(start_page + BaseScrapy.MAX_CONCURRENT_PAGES - 1, max_pages)
-            tasks = (
+            tasks = [
                 self.fetch_products(search_term, page)
                 for page in range(start_page, end_page + 1)
-            )
+            ]
             pages_content = await asyncio.gather(*tasks, return_exceptions=True)
 
             # 遍历每一页的结果
@@ -51,19 +51,18 @@ class BaseScrapy(ABC):
         # 获取响应体的text
         response_text = await self.get_response(search_term, page)
         if response_text is None:
-            logger.error(
-                f"Failed to get response for page {page}'"
-            )
+            logger.error(f"Failed to get response for page {page}'")
             return []
 
         # 获取商品信息，json格式或者Selecter
         items = await self.get_response_items(response_text)
+        # logger.info(f"Got {len(items)} items on page {page}")
         # 如果商品列表为空，则直接返回[]
         if not items:
             return []
 
-        tasks = (self.create_product_from_card(item) for item in items)
-        return await asyncio.gather(*tasks)
+        tasks = [self.create_product_from_card(item) for item in items]
+        return await asyncio.gather(*tasks, return_exceptions=True)
 
     # 请求链接和参数，可在子类中重写
     async def create_request_url(self, params):
@@ -82,25 +81,28 @@ class BaseScrapy(ABC):
                 return response.text
             except httpx.HTTPStatusError as e:
                 if e.response.status_code == 404:
-                    logger.warning(
-                        f"HTTP 404 not found for {e.response.url}. Stopping retries."
-                    )
+                    logger.error(f"请求的URL {e.response.url} 返回了404状态码，停止重试。")
                     return None
                 logger.warning(
-                    f"Retry {attempt + 1}/{BaseScrapy.MAX_RETRIES} for {e.response.url} after status code {e.response.status_code}"
+                    f"由于状态码 {e.response.status_code}，正在进行第 {attempt + 1}/{BaseScrapy.MAX_RETRIES} 次重试..."
                 )
                 await asyncio.sleep(BaseScrapy.RETRY_DELAY)
-            except (httpx.RequestError, httpx.TimeoutException) as e:
+            except httpx.TimeoutException:
                 logger.warning(
-                    f"Retry {attempt + 1}/{BaseScrapy.MAX_RETRIES} due to network error: {e}"
+                    f"请求超时，正在进行第 {attempt + 1}/{BaseScrapy.MAX_RETRIES} 次重试..."
                 )
                 await asyncio.sleep(BaseScrapy.RETRY_DELAY)
+            except httpx.RequestError as e:
+                logger.warning(
+                    f"网络错误：{e}，正在进行第 {attempt + 1}/{BaseScrapy.MAX_RETRIES} 次重试..."
+                )
+                await asyncio.sleep(BaseScrapy.RETRY_DELAY)
+
             except Exception as e:
-                logger.error(f"An unexpected error occurred: {e}")
+                logger.error(f"发生未预期的异常：{e}")
+                break  # 发生未知异常时终止循环
         else:
-            logger.error(
-                f"Failed to get response after {BaseScrapy.MAX_RETRIES} attempts"
-            )
+            logger.error(f"在尝试了 {BaseScrapy.MAX_RETRIES} 次后，仍未能成功获取响应。")
 
         return None
 

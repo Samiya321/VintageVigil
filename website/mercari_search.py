@@ -51,7 +51,7 @@ class MercariSearch(BaseSearch):
                 return []  # 处理空响应或缺少项的情况
 
             tasks = [self.create_product_from_card(item) for item in response["items"]]
-            return await asyncio.gather(*tasks)
+            return await asyncio.gather(*tasks, return_exceptions=True)
         except Exception:
             # 处理可能的异常情况，例如网络错误或解析失败, 或者根据需要进行其他合适的错误处理
             return []

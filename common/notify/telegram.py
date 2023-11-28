@@ -113,11 +113,7 @@ class TelegramClient:
                 modified_photo_url = photo_url
 
             try:
-                start_time = time.time()
                 await send_func(modified_photo_url)
-                logger.info(
-                    f"Notification sent in {time.time() - start_time:.2f} seconds"
-                )
                 return
             except Exception as e:
                 logger.error(

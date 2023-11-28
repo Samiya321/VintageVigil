@@ -52,13 +52,14 @@ class BaseSearch:
 
     async def get_response(self, method, data=None, params=None):
         max_retries = 3  # 最大重试次数
-        retry_delay = 1  # 初始重试间隔（秒）
 
         for attempt in range(max_retries):
             try:
                 headers = self.create_headers(method.upper())
+                request_method = method.lower()
+                request_info = f"请求方法: {'POST' if request_method == 'post' else 'GET'}，尝试次数: {attempt + 1}"
 
-                if method.lower() == "post":
+                if request_method == "post":
                     response = await self.client.post(
                         url=self.root_url,
                         headers=headers,
@@ -72,28 +73,24 @@ class BaseSearch:
                     )
 
                 response.raise_for_status()
+                # logger.info(f"{request_info} - 请求成功。")
                 return response.json()
 
             except httpx.HTTPStatusError as e:
                 if e.response.status_code == 503:
-                    error_message = f"Service unavailable (503) on attempt {attempt + 1}, will retry after delay."
-                    # 503 时直接重试
-                    continue
+                    logger.warning(f"{request_info} - 服务器暂不可用 (503)，将在延迟后重试。")
+                    continue  # 503 状态码时直接重试
                 else:
-                    error_message = (
-                        f"HTTP error {e.response.status_code} on attempt {attempt + 1}"
-                    )
-            except (httpx.RequestError, httpx.TimeoutException) as e:
-                error_message = f"Network error on attempt {attempt + 1}: {e}"
+                    logger.error(f"{request_info} - HTTP 错误 {e.response.status_code}。")
+            except httpx.TimeoutException as e:
+                logger.error(f"{request_info} - 请求超时：{e}。")
+            except httpx.RequestError as e:
+                logger.error(f"{request_info} - 网络请求错误：{e}。")
             except Exception as e:
-                logger.error(f"Unexpected error on attempt {attempt + 1}: {e}")
+                logger.error(f"{request_info} - 遇到意外错误：{e}，停止重试。")
                 break  # 遇到意外错误时中断
 
-            # 记录错误消息并处理重试逻辑
-            logger.error(error_message)
-            # await asyncio.sleep(retry_delay)
-
-        logger.error(f"Failed after {max_retries} attempts.")
+        logger.error(f"在尝试了 {max_retries} 次后，仍未能成功获取响应。")
         return None
 
     def create_headers(self, method):

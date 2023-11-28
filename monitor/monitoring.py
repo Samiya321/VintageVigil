@@ -37,7 +37,10 @@ async def process_search_keyword(
         while is_running:
             try:
                 logger.info(
-                    f"Processing keyword: {search_query.keyword} for website: {website_config.website_name}"
+                    f"--------- Start of iteration {iteration_count} ---------"
+                )  # 循环开始时的日志
+                logger.info(
+                    f"{website_config.website_name} : {search_query.keyword} 开始监控"
                 )
                 unique_products = set()
                 products_to_process = []
@@ -49,7 +52,8 @@ async def process_search_keyword(
                     if product_key not in unique_products:
                         unique_products.add(product_key)
                         products_to_process.append(product_info)
-
+                # logger.info(f"Found {len(unique_products)} products")
+                # logger.info(f"Found {len(products_to_process)} products")
                 # 用于收集 Telegram 客户端的异步任务
                 telegram_tasks = []
                 for item in database.upsert_products(
@@ -57,7 +61,7 @@ async def process_search_keyword(
                     search_query.keyword,
                     website_config.website_name,
                 ):
-                    if iteration_count >= 0:
+                    if iteration_count > 0:
                         price_currency = item["price"] * website_config.exchange_rate
                         if item.get("pre_price") is not None:
                             item["price"] = f"{item['pre_price']} 円 ==> {item['price']}"
@@ -71,6 +75,8 @@ async def process_search_keyword(
                         )
                         # 创建并添加异步任务到列表
                         try:
+                            item_id = item["id"]
+                            logger.info(f"商品信息推送: {item_id}")
                             notify_client = notification_clients[search_query.notify]
                             if notify_client.client_type == "telegram":
                                 task = send_notification(notify_client, message, item)
@@ -91,6 +97,9 @@ async def process_search_keyword(
                 if telegram_tasks:
                     await asyncio.gather(*telegram_tasks, return_exceptions=True)
 
+                logger.info(
+                    f"--------- End of iteration {iteration_count} ---------\n"
+                )  # 循环结束时的日志
                 iteration_count += 1
                 await asyncio.sleep(website_config.delay)
             except Exception as e:

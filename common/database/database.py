@@ -165,7 +165,7 @@ class ProductDatabase:
         :param website: 关联的网站。
         :yield: 处理后的每个产品信息。
         """
-        logger.info(f"Keyword: {keyword}, Website: {website}, Items: {len(items)}")
+        logger.info(f"{website}: {keyword} 搜索商品数量: {len(items)}")
         keyword = self.extract_keyword_from_url(keyword)
 
         self.insert_or_ignore_keyword(website, keyword)
