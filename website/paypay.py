@@ -13,20 +13,21 @@ class Paypay(BaseScrapy):
         )
 
     async def create_search_params(self, search, page: int) -> dict:
-        # 使用字典推导式和getattr简化参数的创建
-        params = {
+        return {
             "query": search.keyword,
             "results": self.page_size,
             "offset": (page - 1) * self.page_size,
+            "imageShape": getattr(search, "imageShape", "square"),
+            "sort": getattr(search, "sort", "ranking"),
+            "order": getattr(search, "order", "DESC"),
+            "webp": getattr(search, "webp", "false"),
+            "module": getattr(search, "module", "catalog:hit:21"),
+            "itemStatus": getattr(search, "itemStatus", "open"),
         }
-        for param in ["imageShape", "sort", "order", "webp", "module", "itemStatus"]:
-            params[param] = getattr(search, param, params.get(param, "default_value"))
-
-        return params
 
     async def get_max_pages(self, search) -> int:
         res = await self.get_response(search, 1)
-        data = json.loads(re.search(r"{.*}", res.text, re.DOTALL).group())
+        data = json.loads(re.search(r"{.*}", res, re.DOTALL).group())
         return ceil(data.get("totalResultsAvailable", 0) / self.page_size)
 
     async def get_response_items(self, response):
@@ -34,7 +35,7 @@ class Paypay(BaseScrapy):
         return data.get("items", [])
 
     async def get_item_id(self, item):
-        return item.get("itemid")
+        return item.get("id")
 
     async def get_item_name(self, item):
         return item.get("title")
