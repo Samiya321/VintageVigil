@@ -41,7 +41,7 @@ class TelegramClient:
         headers = {"Authorization": f"Client-ID {self.imgur_client_id}"}
         async with AsyncClient(proxies=os.getenv("HTTP_PROXY")) as client:
             # 下载图片
-            response = await client.get(image_url)
+            response = await client.get(image_url, follow_redirects = True)
             if response.status_code != 200:
                 logger.error("Error downloading image")
                 return None
@@ -104,10 +104,14 @@ class TelegramClient:
         for retry in ["random=64", "random=54", "original"]:
             if retry != "original":
                 # 如果 URL 已有参数，使用 '&' 添加新参数；否则使用 '?'
-                modified_photo_url = f"{photo_url}&{retry}" if "?" in photo_url else f"{photo_url}?{retry}"
+                modified_photo_url = (
+                    f"{photo_url}&{retry}"
+                    if "?" in photo_url
+                    else f"{photo_url}?{retry}"
+                )
             else:
                 modified_photo_url = photo_url
-                
+
             try:
                 start_time = time.time()
                 await send_func(modified_photo_url)
