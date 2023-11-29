@@ -156,7 +156,7 @@ class ProductDatabase:
         # 如果不是http开头的URL或者没有找到对应的关键字，则返回原始URL或None
         return keyword
 
-    def upsert_products(self, items: List[dict], keyword: str, website: str):
+    def upsert_products(self, items, keyword: str, website: str):
         """
         插入或更新产品信息。
 
@@ -177,17 +177,17 @@ class ProductDatabase:
         new_num = 0
 
         for item in items:
-            current_price = item["price"]
-            existing_price = existing_prices.get(item["id"])
+            current_price = item.price
+            existing_price = existing_prices.get(item.id)
 
             if existing_price is None:
                 # 商品在数据库中不存在，视为新商品
-                item["price_change"] = 1
+                item.price_change = 1
                 new_num += 1
             elif current_price != existing_price:
                 # 商品价格变化了，视为更新的商品
-                item["price_change"] = 2 if current_price > existing_price else 3
-                item["pre_price"] = existing_price
+                item.price_change = 2 if current_price > existing_price else 3
+                item.pre_price = existing_price
                 updated_num += 1
             else:
                 # 商品存在且价格未变，跳过处理
@@ -195,15 +195,16 @@ class ProductDatabase:
 
             to_insert_or_update.append(
                 (
-                    item["id"],
+                    item.id,
                     keyword_id,
-                    item["price"],
-                    item["name"],
-                    item["image_url"],
-                    item["product_url"],
+                    item.price,
+                    item.name,
+                    item.image_url,
+                    item.product_url,
                 )
             )
-            yield item
+            if current_price != 999999999:
+                yield item
 
         if to_insert_or_update:
             with self.conn:  # 使用事务处理
@@ -215,7 +216,7 @@ class ProductDatabase:
         if updated_num > 0 or new_num > 0:
             logger.info(f"Database updated. New: {new_num}, Updated: {updated_num}")
 
-    def _bulk_fetch_prices(self, items: List[dict], keyword_id: int) -> dict:
+    def _bulk_fetch_prices(self, items, keyword_id: int) -> dict:
         """
         批量获取产品的当前价格。
 
@@ -225,7 +226,7 @@ class ProductDatabase:
         """
 
         # 构造一个包含所有项目 ID 和关键字 ID 的元组列表
-        ids = [(item["id"], keyword_id) for item in items]
+        ids = [(item.id, keyword_id) for item in items]
 
         # 为每个 (id, keyword_id) 对创建占位符 "?"
         placeholders = ",".join(["(?, ?)" for _ in ids])

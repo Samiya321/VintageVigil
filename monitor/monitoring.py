@@ -41,18 +41,12 @@ async def process_search_keyword(
                 logger.info(
                     f"{website_config.website_name} : {search_query.keyword} 开始监控"
                 )
-                unique_products = set()
-                products_to_process = []
+                products_to_process = set()
                 async for product in scraper.search(search_query, iteration_count):
                     if not is_running:  # 检查 is_running 状态
                         break  # 如果 is_running 为 False，则中断循环
-                    product_info = product.to_dict()
-                    product_key = frozenset(product_info.items())
-                    if product_key not in unique_products:
-                        unique_products.add(product_key)
-                        products_to_process.append(product_info)
-                # logger.info(f"Found {len(unique_products)} products")
-                # logger.info(f"Found {len(products_to_process)} products")
+                    products_to_process.add(product)
+
                 # 用于收集 Telegram 客户端的异步任务
                 telegram_tasks = []
                 for item in database.upsert_products(
@@ -61,21 +55,21 @@ async def process_search_keyword(
                     website_config.website_name,
                 ):
                     if iteration_count > 0:
-                        price_currency = item["price"] * website_config.exchange_rate
-                        if item.get("pre_price") is not None:
-                            item["price"] = f"{item['pre_price']} 円 ==> {item['price']}"
-
+                        price_currency = item.price * website_config.exchange_rate
+                        if item.pre_price is not None:
+                            price = f"{item.pre_price} 円 ==> {item.price}"
+                        else:
+                            price = item.price
                         message = message_template.substitute(
-                            priceStatus=get_price_status_string(item["price_change"]),
-                            productName=item["name"],
-                            productURL=item["product_url"],
-                            price=item["price"],
+                            priceStatus=get_price_status_string(item.price_change),
+                            productName=item.name,
+                            productURL=item.product_url,
+                            price=price,
                             priceCurrency=f"{price_currency:.2f}",
                         )
                         # 创建并添加异步任务到列表
                         try:
-                            item_id = item["id"]
-                            logger.info(f"商品信息推送: {item_id}")
+                            logger.info(f"商品信息推送: {item.id}")
                             notify_client = notification_clients[search_query.notify]
                             if notify_client.client_type == "telegram":
                                 task = send_notification(notify_client, message, item)
@@ -111,10 +105,10 @@ async def send_notification(client, message, item):
     """
     try:
         if client.client_type == "telegram":
-            await client.send_message(message, item["image_url"])
+            await client.send_message(message, item.image_url)
         elif client.client_type == "wecom":
             await client.send_message(
-                message, item["image_url"], item["product_url"], item["name"]
+                message, item.image_url, item.product_url, item.name
             )
             await asyncio.sleep(0.01)  # 添加小延迟
     except Exception as e:
