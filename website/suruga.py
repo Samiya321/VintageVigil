@@ -53,15 +53,16 @@ class Suruga(BaseScrapy):
         return item.css("p.title a::text").get()
 
     async def get_item_id(self, item):
-        url = item.css("p.title a::attr(href)").get()
-        return re.search(r"(\d+)", url).group(1) if url else None
+        product_link = item.css("p.title a::attr(href)").get()
+        return re.search(r"product/(detail|other)/(\w+)", product_link).group(2)
 
     async def get_item_image_url(self, item, id):
         return f"https://www.suruga-ya.jp/database/photo.php?shinaban={id}&size=m"
-        # return "https://www.suruga-ya.jp/database/pics_light/game/{}.jpg".format(id)
+        # return item.css(".photo_box a img::attr(src)").get()
+        # return f"https://www.suruga-ya.jp/database/pics_light/game/{id}.jpg"
 
     async def get_item_product_url(self, item, id):
-        return f"https://www.suruga-ya.jp/product/detail/{id}"
+        return f"https://www.suruga-ya.jp/product/other/{id}"
 
     async def get_item_price(self, item):
         """
@@ -91,6 +92,7 @@ class Suruga(BaseScrapy):
             except ValueError:
                 return 0
 
+        """ 原有价格获取逻辑
         prices = [
             extract_price(text)
             for text in [
@@ -103,7 +105,22 @@ class Suruga(BaseScrapy):
             if text and text.strip() != "品切れ"
         ]
 
-        return min(prices, default=0) if prices else 0
+        return min(prices, default=0) if prices else 0"""
+
+        # 尝试获取本店价格
+        price_teika = item.css("p.price_teika strong::text").get()
+        if price_teika:
+            price = extract_price(price_teika)
+            # 如果提取的价格是数字，直接返回
+            return price
+
+        # 如果标准价格不存在或不是数字，尝试获取其他价格
+        price = item.css("p.price::text").get()
+        # 如果价格为“品切れ”（缺货），返回一个高的默认值
+        if price == "品切れ":
+            return 999999999
+
+        return 0
 
     async def get_item_site(self):
         return "suruga"
