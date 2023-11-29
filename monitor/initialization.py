@@ -21,6 +21,7 @@ async def setup_notification_clients(notification_config, httpx_client, telegram
                     notification_clients[client_key] = TelegramClient(
                         bot,
                         notification_config.get("telegram_chat_id"),
+                        httpx_client,
                         notification_config.get("tg_send_type"),
                     )
                     # Initialize client
