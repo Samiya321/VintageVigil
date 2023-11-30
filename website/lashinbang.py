@@ -46,7 +46,10 @@ class Lashinbang(BaseScrapy):
         return item.get("price")
 
     async def get_item_image_url(self, item, id):
-        return item.get("image")
+        image = item.get("image")
+        if image == "https://img.lashinbang.com/":
+            image = image + item.get("narrow14")
+        return image
 
     async def get_item_product_url(self, item, id):
         return item.get("url")
