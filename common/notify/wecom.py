@@ -58,7 +58,7 @@ class WecomClient:
     async def _upload_image(self, image_url, access_token):
         upload_url = f"https://qyapi.weixin.qq.com/cgi-bin/media/upload?access_token={access_token}&type=image"
         try:
-            image_response = await self.client.get(image_url)
+            image_response = await self.client.get(image_url, follow_redirects=True)
             image_response.raise_for_status()
 
             files = {"media": BytesIO(image_response.content)}

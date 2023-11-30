@@ -70,6 +70,7 @@ class BaseSearch:
                         url=self.root_url,
                         headers=headers,
                         params=params,
+                        follow_redirects = True,
                     )
 
                 response.raise_for_status()

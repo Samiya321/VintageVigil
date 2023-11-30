@@ -97,7 +97,7 @@ class TelegramClient:
 
         # 如果所有修改过的链接都失败了，尝试请求原始图片并发送
         try:
-            response = await self.client.get(photo_url)
+            response = await self.client.get(photo_url, follow_redirects=True)
             response.raise_for_status()  # 确保请求成功
             image_data = response.content
             await send_func(image_data)

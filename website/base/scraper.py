@@ -75,7 +75,7 @@ class BaseScrapy(ABC):
         for attempt in range(BaseScrapy.MAX_RETRIES):
             try:
                 response = await self.client.get(
-                    url, params=params, headers=self.headers
+                    url, params=params, headers=self.headers, follow_redirects=True
                 )
                 response.raise_for_status()
                 return response.text
