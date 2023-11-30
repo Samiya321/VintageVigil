@@ -203,7 +203,11 @@ class ProductDatabase:
                     item.product_url,
                 )
             )
-            if current_price != 999999999:
+            if website == "suruga":
+                if current_price != 999999999:
+                    if item.price_change == 1 or existing_price == 999999999:
+                        yield item
+            else:
                 yield item
 
         if to_insert_or_update:

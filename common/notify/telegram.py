@@ -73,7 +73,9 @@ class TelegramClient:
         :param send_func: 发送图片的函数。
         """
         # 特殊处理paypay图片 URL
-        if not photo_url.startswith("https://paypay.neusoft.com/"):
+        if not (photo_url.startswith("https://paypay.neusoft.com") or
+                photo_url.startswith("https://www.suruga-ya.jp")):
+
             for retry in ["random=64", "random=54", "original"]:
                 if retry != "original":
                     # 如果 URL 已有参数，使用 '&' 添加新参数；否则使用 '?'
