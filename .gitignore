@@ -26,3 +26,9 @@ build/
 dist/
 eggs/
 *.egg-info/
+
+# 测试代码
+tests/
+
+# 用户配置
+user/*/*
