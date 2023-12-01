@@ -19,12 +19,12 @@ async def initialize_resources(parse_mode=None):
 
     # Initialize httpx AsyncClient clinet
     httpx_client = httpx.AsyncClient(
-        proxies=proxy, verify=False, http2=False, timeout=3
+        proxies=proxy, verify=False, http2=False, timeout=10
     )
 
     # Initialize telegram bot
-    asyncio_helper.CONNECT_TIMEOUT = 3
-    asyncio_helper.REQUEST_TIMEOUT = 3
+    asyncio_helper.CONNECT_TIMEOUT = 10
+    asyncio_helper.REQUEST_TIMEOUT = 10
     asyncio_helper.proxy = proxy or None
 
     telegram_bot_tokens = [

@@ -72,6 +72,7 @@ class TelegramClient:
         :param photo_url: 要发送的图片 URL。
         :param send_func: 发送图片的函数。
         """
+        """
         # 特殊处理paypay图片 URL
         if not (photo_url.startswith("https://paypay.neusoft.com") or
                 photo_url.startswith("https://www.suruga-ya.jp")):
@@ -94,7 +95,7 @@ class TelegramClient:
                     logger.error(
                         f"Retry: {retry}: Error during sending photo: {e}, photo_url: {modified_photo_url}"
                     )
-
+        """
         # 如果所有修改过的链接都失败了，尝试请求原始图片并发送
         try:
             response = await self.client.get(photo_url, follow_redirects=True)
