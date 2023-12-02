@@ -189,13 +189,15 @@ class ProductDatabase:
                 new_num,
                 price_changed_num,
                 restocked_num,
-                item,
-                website,
-                keyword,
             )
+            item.price_change = price_change
+
+            valid_price_changes = {3, 4}
+            pre_price = existing_prices_statuses.get(item.id, {}).get("price")
+            if price_change in valid_price_changes:
+                item.pre_price = pre_price
 
             if self.should_yield_item(price_change, push_price_changes):
-                item.price_change = price_change
                 yield item
 
             to_insert_or_update.append(self.prepare_data_for_insert(item, keyword_id))
@@ -237,9 +239,6 @@ class ProductDatabase:
         new_num,
         price_changed_num,
         restocked_num,
-        item,
-        website,
-        keyword,
     ):
         """
         更新和记录商品计数。
