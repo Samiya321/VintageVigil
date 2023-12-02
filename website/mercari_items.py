@@ -46,3 +46,13 @@ class MercariItems(BaseSearch):
             params["max_pager_id"] = self.pager_id
 
         return params
+
+    async def get_item_site(self):
+        return "mercari_user"
+
+    async def get_item_status(self, item):
+        if item.get("status") == "on_sale":
+            status = 1
+        else:
+            status = 0
+        return status

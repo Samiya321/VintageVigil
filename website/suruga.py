@@ -92,7 +92,6 @@ class Suruga(BaseScrapy):
             except ValueError:
                 return 0
 
-        """ 原有价格获取逻辑
         prices = [
             extract_price(text)
             for text in [
@@ -105,22 +104,37 @@ class Suruga(BaseScrapy):
             if text and text.strip() != "品切れ"
         ]
 
-        return min(prices, default=0) if prices else 0"""
-
-        # 尝试获取本店价格
-        price_teika = item.css("p.price_teika strong::text").get()
-        if price_teika:
-            price = extract_price(price_teika)
-            # 如果提取的价格是数字，直接返回
-            return price
-
-        # 如果标准价格不存在或不是数字，尝试获取其他价格
-        price = item.css("p.price::text").get()
-        # 如果价格为“品切れ”（缺货），返回一个高的默认值
-        if price == "品切れ":
-            return 999999999
-
-        return 0
+        return min(prices, default=0) if prices else 0
 
     async def get_item_site(self):
         return "suruga"
+
+    async def get_item_status(self, item):
+        """
+        根据商品的可用性和定价信息确定商品状态。
+
+        返回值：
+            0: 本店及第三方店铺均售空
+            1: 本店及第三方店铺均在售
+            2: 本店在售 第三方店铺售空
+            3: 本店售空 第三方店铺在售
+            None: 在所有其他情况下。
+        """
+        price = item.css("p.price::text").get()  # 是否品切
+        price_teika = item.css("p.price_teika strong::text").get()  # 本店价格
+        price_third = item.css(
+            "div.mgnT10.highlight-box strong::text"
+        ).get()  # 第三方店铺是否有货
+
+        # 判断商品状态
+        if price and not price_third:
+            return 0  # 本店及第三方店铺均售空
+        elif not price and price_teika and price_third:
+            return 1  # 本店及第三方店铺均在售
+        elif not price and price_teika and not price_third:
+            return 2  # 本店在售 第三方店铺售空
+        elif price and price_third:
+            return 3  # 本店售空 第三方店铺在售
+
+        return None  # 其他情况
+    

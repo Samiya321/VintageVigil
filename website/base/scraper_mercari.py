@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from uuid import uuid4
 
 import ecdsa
@@ -35,14 +36,11 @@ class MercariItemStatus:
     ITEM_STATUS_ADMIN_CANCEL = "ITEM_STATUS_ADMIN_CANCEL"
 
 
-class BaseSearch:
+class BaseSearch(ABC):
     def __init__(self, root_url, client, page_size=120):
         self.page_size = page_size
         self.root_url = root_url
         self.client = client
-
-    async def close(self):
-        await self.client.aclose()
 
     async def search(self, **kwargs) -> AsyncGenerator[SearchResultItem, None]:
         pass  # 由子类实现
@@ -70,7 +68,7 @@ class BaseSearch:
                         url=self.root_url,
                         headers=headers,
                         params=params,
-                        follow_redirects = True,
+                        follow_redirects=True,
                     )
 
                 response.raise_for_status()
@@ -117,20 +115,56 @@ class BaseSearch:
         return dpop
 
     async def create_product_from_card(self, item) -> SearchResultItem:
-        # 商品名称
-        name = item["name"]
-        # 商品ID
-        id = item["id"]
-        # 商品价格
-        price = item["price"]
+        """
+        Create a product object from an item card.
 
-        # 商品链接
+        Args:
+            item: The item card to process.
+
+        Returns:
+            SearchResultItem: The processed product.
+        """
+        name = await self.get_item_name(item=item)
+
+        product_id = await self.get_item_id(item=item)
+
+        product_url = await self.get_item_product_url(item=item, id=product_id)
+
+        image_url = await self.get_item_image_url(item=item, id=product_id)
+
+        price = await self.get_item_price(item=item)
+
+        site = await self.get_item_site()
+
+        status = await self.get_item_status(item=item)
+
+        return SearchResultItem(
+            name=name,
+            price=price,
+            image_url=image_url,
+            product_url=product_url,
+            id=product_id,
+            site=site,
+            status=status,
+        )
+
+    async def get_item_id(self, item):
+        return item["id"]
+
+    async def get_item_name(self, item):
+        return item["name"]
+
+    async def get_item_price(self, item):
+        return item["price"]
+
+    async def get_item_product_url(self, item, id):
         if id[0] == "m" and id[1:].isdigit():
             product_url = "https://jp.mercari.com/item/{}".format(id)
         else:
             product_url = "https://jp.mercari.com/shops/product/{}".format(id)
+        return product_url
 
-        # 商品图片链接
+    async def get_item_image_url(self, item, id):
         image_type = "image"
         if id[0] == "m" and id[1:].isdigit():
             if image_type == "image":
@@ -140,20 +174,15 @@ class BaseSearch:
                 )
             else:
                 # image_url = "https://static.mercdn.net/thumb/photos/{}_1.jpg".format(id)
-
                 image_url = item["thumbnails"][0]
-
         else:
             image_url = item["thumbnails"][0]
+        return image_url
 
-        # 组合商品信息
-        item = SearchResultItem(
-            name=name,
-            price=price,
-            image_url=image_url,
-            product_url=product_url,
-            id=id,
-            site="mercari",
-        )
+    @abstractmethod
+    async def get_item_site(self):
+        pass
 
-        return item
+    @abstractmethod
+    async def get_item_status(self, item):
+        pass

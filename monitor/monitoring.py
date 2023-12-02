@@ -10,7 +10,7 @@ def get_price_status_string(price_change):
     """
     Return a string representation of the price status.
     """
-    return {1: "上新", 2: "涨价", 3: "降价"}.get(price_change, "")
+    return {0:"不变", 1: "上新", 2: "补货", 3: "涨价", 4: "降价"}.get(price_change, "")
 
 
 async def process_search_keyword(
@@ -53,6 +53,7 @@ async def process_search_keyword(
                     products_to_process,
                     search_query.keyword,
                     website_config.website_name,
+                    website_config.push_price_changes,
                 ):
                     if iteration_count > 0:
                         price_currency = item.price * website_config.exchange_rate
@@ -69,7 +70,7 @@ async def process_search_keyword(
                         )
                         # 创建并添加异步任务到列表
                         try:
-                            logger.info(f"商品信息推送: {item.id}")
+                            logger.info(f"商品信息推送: {item.product_url}")
                             notify_client = notification_clients[search_query.notify]
                             if notify_client.client_type == "telegram":
                                 task = send_notification(notify_client, message, item)

@@ -51,3 +51,7 @@ class Paypay(BaseScrapy):
 
     async def get_item_site(self):
         return "paypay"
+
+    async def get_item_status(self, item):
+        return 1 if item.get("itemStatus") == "OPEN" else 0
+    

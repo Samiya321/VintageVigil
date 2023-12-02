@@ -56,3 +56,6 @@ class Lashinbang(BaseScrapy):
 
     async def get_item_site(self):
         return "lashinbang"
+
+    async def get_item_status(self, item):
+        return item.get("number6")

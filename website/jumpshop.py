@@ -65,3 +65,7 @@ class JumpShop(BaseScrapy):
 
     async def get_item_site(self):
         return "jumpshop"
+
+    async def get_item_status(self, item):
+        sold_out = item.css("div.price.price--sold-out")
+        return 0 if sold_out else 1

@@ -15,7 +15,8 @@ class ProductDatabase:
                 id INTEGER PRIMARY KEY AUTOINCREMENT,  -- 主键，自动递增
                 website TEXT NOT NULL,                 -- 网站名
                 keyword TEXT NOT NULL,                 -- 关键词
-                product_count INTEGER DEFAULT 0,       -- 产品计数，默认为 0
+                product_count_1 INTEGER DEFAULT 0,     -- 统计 status 为 1, 2, 3 的商品数量
+                product_count_2 INTEGER DEFAULT 0,     -- 统计 status 为 0 的商品数量
                 UNIQUE(website, keyword)               -- 确保每个网站和关键词的组合是唯一的
             );
         """,
@@ -29,6 +30,7 @@ class ProductDatabase:
                 price REAL NOT NULL,                   -- 价格
                 image_url TEXT,                        -- 图片 URL
                 product_url TEXT,                      -- 产品 URL
+                status INTEGER,                        -- 产品状态
                 PRIMARY KEY (id, keyword_id),          -- 将产品 ID 和关键词 ID 一起作为主键
                 FOREIGN KEY (keyword_id) REFERENCES website_keywords (id) -- 外键关联到 website_keywords 表
             );
@@ -36,13 +38,14 @@ class ProductDatabase:
         "upsert_product": """
             -- 插入或更新产品信息
             -- 如果具有相同的产品 ID 和关键词 ID 的记录已存在，则更新该记录
-            INSERT INTO products (id, keyword_id, price, name, image_url, product_url) 
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO products (id, keyword_id, price, name, image_url, product_url, status) 
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id, keyword_id) DO UPDATE SET
             price = excluded.price,
             name = excluded.name,
             image_url = excluded.image_url,
-            product_url = excluded.product_url;
+            product_url = excluded.product_url,
+            status = excluded.status;
         """,
         "insert_or_ignore_keyword": """
             -- 插入新的网站和关键词对
@@ -55,7 +58,10 @@ class ProductDatabase:
         """,
         "update_product_count": """
             -- 更新特定关键词 ID 的产品计数
-            UPDATE website_keywords SET product_count = ? WHERE id = ?;
+            UPDATE website_keywords 
+            SET product_count_1 = (SELECT COUNT(*) FROM products WHERE keyword_id = ? AND status IN (1, 2, 3)),
+                product_count_2 = (SELECT COUNT(*) FROM products WHERE keyword_id = ? AND status = 0)
+            WHERE id = ?;
         """,
         "count_products_by_keyword": """
             -- 计算特定关键词的产品总数
@@ -135,11 +141,7 @@ class ProductDatabase:
 
         :param keyword_id: 关键词 ID。
         """
-
-        count = self._safe_execute(
-            "count_products_by_keyword", (keyword_id,), fetch_one=True
-        )[0]
-        self._safe_execute("update_product_count", (count, keyword_id))
+        self._safe_execute("update_product_count", (keyword_id, keyword_id, keyword_id))
 
     def extract_keyword_from_url(self, keyword):
         # 检查URL是否以http开头
@@ -156,77 +158,159 @@ class ProductDatabase:
         # 如果不是http开头的URL或者没有找到对应的关键字，则返回原始URL或None
         return keyword
 
-    def upsert_products(self, items, keyword: str, website: str):
+    def upsert_products(
+        self, items, keyword: str, website: str, push_price_changes: bool
+    ):
         """
         插入或更新产品信息。
 
-        :param items: 包含产品信息的字典列表。
+        :param items: 包含产品信息的列表。
         :param keyword: 关联的关键词。
         :param website: 关联的网站。
+        :param push_price_changes: 是否推送价格变化的商品。
         :yield: 处理后的每个产品信息。
         """
         logger.info(f"{website}: {keyword} 搜索商品数量: {len(items)}")
         keyword = self.extract_keyword_from_url(keyword)
-
         self.insert_or_ignore_keyword(website, keyword)
         keyword_id = self.get_keyword_id(website, keyword)
-        existing_prices = self._bulk_fetch_prices(items, keyword_id)
 
+        existing_prices_statuses = self._bulk_fetch_prices_statuses(items, keyword_id)
         to_insert_or_update = []
-        updated_num = 0
+
         new_num = 0
+        price_changed_num = 0
+        restocked_num = 0
 
         for item in items:
-            current_price = item.price
-            existing_price = existing_prices.get(item.id)
-
-            if existing_price is None:
-                # 商品在数据库中不存在，视为新商品
-                item.price_change = 1
-                new_num += 1
-            elif current_price != existing_price:
-                # 商品价格变化了，视为更新的商品
-                item.price_change = 2 if current_price > existing_price else 3
-                item.pre_price = existing_price
-                updated_num += 1
-            else:
-                # 商品存在且价格未变，跳过处理
-                continue
-
-            to_insert_or_update.append(
-                (
-                    item.id,
-                    keyword_id,
-                    item.price,
-                    item.name,
-                    item.image_url,
-                    item.product_url,
-                )
+            price_change = self.process_item(item, existing_prices_statuses)
+            new_num, price_changed_num, restocked_num = self.update_counts(
+                price_change,
+                new_num,
+                price_changed_num,
+                restocked_num,
+                item,
+                website,
+                keyword,
             )
-            if website == "suruga":
-                if current_price != 999999999:
-                    if item.price_change == 1 or existing_price == 999999999:
-                        yield item
-            else:
+
+            if self.should_yield_item(price_change, push_price_changes):
                 yield item
 
+            to_insert_or_update.append(self.prepare_data_for_insert(item, keyword_id))
+
+        self.execute_bulk_upsert(to_insert_or_update)
+        self.update_product_count(keyword_id)
+        if (new_num + price_changed_num + restocked_num) != 0:
+            logger.info(
+                f"Database Updated 价格变动:{price_changed_num} 新品：{new_num} 补货：{restocked_num}"
+            )
+
+    def process_item(self, item, existing_prices_statuses):
+        """
+        处理单个商品。
+
+        :param item: 商品信息。
+        :param existing_prices_statuses: 现有的价格和状态信息。
+        :return: 价格变动类型。
+        """
+        existing = existing_prices_statuses.get(item.id, {})
+        existing_price = existing.get("price")
+        existing_status = existing.get("status")
+
+        if existing is None:
+            return 1  # 新品
+        if item.status == 0:
+            return 0  # 已售罄
+        if item.status == existing_status or existing_status == 1:
+            if item.price > existing_price:
+                return 3  # 价格上涨
+            elif item.price < existing_price:
+                return 4  # 价格下跌
+            return 0  # 价格不变
+        return 2  # 补货
+
+    def update_counts(
+        self,
+        price_change,
+        new_num,
+        price_changed_num,
+        restocked_num,
+        item,
+        website,
+        keyword,
+    ):
+        """
+        更新和记录商品计数。
+
+        :param price_change: 价格变动类型。
+        :param new_num: 新品计数。
+        :param price_changed_num: 价格变动计数。
+        :param restocked_num: 补货计数。
+        :param item: 商品信息。
+        :param website: 关联网站。
+        :param keyword: 关联关键词。
+        :return: 更新后的计数。
+        """
+        if price_change == 1:
+            logger.info(f"{website}: {keyword} {item.product_url} 新品")
+            new_num += 1
+        elif price_change in [3, 4]:
+            logger.info(f"{website}: {keyword} {item.product_url} 价格变动")
+            price_changed_num += 1
+        elif price_change == 2:
+            logger.info(f"{website}: {keyword} {item.product_url} 补货")
+            restocked_num += 1
+
+        return new_num, price_changed_num, restocked_num
+
+    def should_yield_item(self, price_change, push_price_changes):
+        """
+        决定是否yield商品。
+
+        :param price_change: 价格变动类型。
+        :param push_price_changes: 是否推送价格变化的商品。
+        :return: 是否yield商品。
+        """
+        return (push_price_changes and price_change != 0) or (0 < price_change < 3)
+
+    def prepare_data_for_insert(self, item, keyword_id):
+        """
+        准备用于插入的数据。
+
+        :param item: 商品信息。
+        :param keyword_id: 关键词ID。
+        :return: 准备插入的数据。
+        """
+        return (
+            item.id,
+            keyword_id,
+            item.price,
+            item.name,
+            item.image_url,
+            item.product_url,
+            item.status,
+        )
+
+    def execute_bulk_upsert(self, to_insert_or_update):
+        """
+        执行批量插入或更新。
+
+        :param to_insert_or_update: 待插入或更新的数据列表。
+        """
         if to_insert_or_update:
-            with self.conn:  # 使用事务处理
+            with self.conn:
                 self.conn.executemany(
                     self.SQL_STATEMENTS["upsert_product"], to_insert_or_update
                 )
 
-        self.update_product_count(keyword_id)
-        if updated_num > 0 or new_num > 0:
-            logger.info(f"Database updated. New: {new_num}, Updated: {updated_num}")
-
-    def _bulk_fetch_prices(self, items, keyword_id: int) -> dict:
+    def _bulk_fetch_prices_statuses(self, items, keyword_id: int) -> dict:
         """
-        批量获取产品的当前价格。
+        批量获取产品的当前价格和状态。
 
         :param items: 包含产品信息的字典列表。
         :param keyword_id: 关联的关键词 ID。
-        :return: 一个字典，包含产品 ID 和对应的价格。
+        :return: 一个字典，包含产品 ID 和对应的价格及状态。
         """
 
         # 构造一个包含所有项目 ID 和关键字 ID 的元组列表
@@ -236,10 +320,7 @@ class ProductDatabase:
         placeholders = ",".join(["(?, ?)" for _ in ids])
 
         # 构造查询字符串
-        query = "SELECT id, price FROM products WHERE (id, keyword_id) IN ({})".format(
-            placeholders
-        )
-        # query = self.SQL_STATEMENTS["bulk_fetch_prices"].format(placeholders)
+        query = f"SELECT id, price, status FROM products WHERE (id, keyword_id) IN ({placeholders})"
         # 将元组列表展开为参数列表
         params = [param for tup in ids for param in tup]
 
@@ -248,9 +329,11 @@ class ProductDatabase:
         result = cursor.fetchall()
 
         # 构造并返回包含查询结果的字典
-        # 只包含数据库中实际存在的产品的价格
-        prices = {id: price for id, price in result}
-        return prices
+        # 字典的结构为 {产品ID: {"price": 价格, "status": 状态}}
+        prices_statuses = {
+            id: {"price": price, "status": status} for id, price, status in result
+        }
+        return prices_statuses
 
     def close(self):
         """

@@ -83,3 +83,12 @@ class MercariSearch(BaseSearch):
             # this is the default in their site, so leaving it as these 2
             "defaultDatasets": ["DATASET_TYPE_MERCARI", "DATASET_TYPE_BEYOND"],
         }
+    async def get_item_site(self):
+        return "mercari"
+    
+    async def get_item_status(self, item):
+        if item.get("status") == "ITEM_STATUS_ON_SALE":
+            status = 1
+        else:
+            status = 0
+        return status

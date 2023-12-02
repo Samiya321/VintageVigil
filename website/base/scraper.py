@@ -116,17 +116,19 @@ class BaseScrapy(ABC):
         Returns:
             SearchResultItem: The processed product.
         """
-        name = await self.get_item_name(item)
-        product_id = await self.get_item_id(
-            item
-        )  # Renamed 'id' to 'product_id' for clarity
+        name = await self.get_item_name(item = item)
+
+        product_id = await self.get_item_id(item = item)
+        
         product_url = await self.get_item_product_url(item=item, id=product_id)
 
         image_url = await self.get_item_image_url(item=item, id=product_id)
 
-        price = await self.get_item_price(item)
+        price = await self.get_item_price(item = item)
 
         site = await self.get_item_site()
+
+        status = await self.get_item_status(item=item)
 
         return SearchResultItem(
             name=name,
@@ -135,6 +137,7 @@ class BaseScrapy(ABC):
             product_url=product_url,
             id=product_id,
             site=site,
+            status=status,
         )
 
     async def extract_number_from_content(
@@ -201,6 +204,10 @@ class BaseScrapy(ABC):
         pass
 
     @abstractmethod
+    async def get_item_site(self):
+        pass
+
+    @abstractmethod
     async def get_item_id(self, item):
         pass
 
@@ -213,13 +220,13 @@ class BaseScrapy(ABC):
         pass
 
     @abstractmethod
-    async def get_item_image_url(self, item, id):
-        pass
-
-    @abstractmethod
     async def get_item_product_url(self, item, id):
         pass
 
     @abstractmethod
-    async def get_item_site(self):
+    async def get_item_image_url(self, item, id):
+        pass
+
+    @abstractmethod
+    async def get_item_status(self, item):
         pass

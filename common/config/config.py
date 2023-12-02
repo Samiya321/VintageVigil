@@ -23,11 +23,12 @@ class SearchConfig:
 
 class WebsiteCommon:
     def __init__(
-            self, website_name: str, delay: float, exchange_rate: float, msg_tpl: str
+            self, website_name: str, delay: float, exchange_rate: float, push_price_changes, msg_tpl: str
     ):
         self.website_name = website_name
         self.delay = delay
         self.exchange_rate = exchange_rate
+        self.push_price_changes = push_price_changes
         self.msg_tpl = msg_tpl
 
 
@@ -89,6 +90,9 @@ class Config:
                 delay=website_config.get("delay", config_default.DEFAULT_DELAY),
                 exchange_rate=website_config.get(
                     "exchange_rate", config_default.EXCHANGE_RATE
+                ),
+                push_price_changes = website_config.get(
+                    "push_price_changes", config_default.PUSH_PRICE_CHANGES
                 ),
                 msg_tpl=website_config.get("msg_tpl", config_default.MESSAGE_TEMPLATE),
             )

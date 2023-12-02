@@ -71,3 +71,6 @@ class Fril(BaseScrapy):
 
     async def get_item_site(self):
         return "fril"
+
+    async def get_item_status(self, item):
+        return 0 if item.css(".item-box__soldout_ribbon") else 1

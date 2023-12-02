@@ -4,10 +4,7 @@ from .base.search_result_item import SearchResultItem
 
 
 class MercariMercapi:
-    def __init__(
-        self,
-        client
-    ):
+    def __init__(self, client):
         self._mercapi = Mercapi()
         self.client = client
 
@@ -23,6 +20,8 @@ class MercariMercapi:
                     price=item.price,
                     image_url=item.thumbnails[0] if item.thumbnails else None,
                     product_url=f"https://jp.mercari.com/item/{item.id_}",
+                    site = "mercapi",
+                    status = self.get_item_status(item)
                 )
 
             if results.meta.next_page_token:
@@ -31,5 +30,9 @@ class MercariMercapi:
             else:
                 break  # 如果没有下一页，则中断循环
 
-    async def close(self):
-        pass
+    def get_item_status(self, item):
+        if item.status == "ITEM_STATUS_ON_SALE":
+            status = 1
+        else:
+            status = 0
+        return status
