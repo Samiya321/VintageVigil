@@ -195,6 +195,7 @@ class ProductDatabase:
             )
 
             if self.should_yield_item(price_change, push_price_changes):
+                item.price_change = price_change
                 yield item
 
             to_insert_or_update.append(self.prepare_data_for_insert(item, keyword_id))
@@ -218,15 +219,15 @@ class ProductDatabase:
         existing_price = existing.get("price")
         existing_status = existing.get("status")
 
-        if existing is None:
-            return 1  # 新品
-        if item.status == 0:
-            return 0  # 已售罄
+        if existing_price is None or existing_status is None:  # 新品
+            return 1
+        if item.status == 0:  # 已售罄
+            return 0
         if item.status == existing_status or existing_status == 1:
-            if item.price > existing_price:
-                return 3  # 价格上涨
-            elif item.price < existing_price:
-                return 4  # 价格下跌
+            if item.price > existing_price:  # 价格上涨
+                return 3
+            elif item.price < existing_price:  # 价格下跌
+                return 4
             return 0  # 价格不变
         return 2  # 补货
 
@@ -252,14 +253,11 @@ class ProductDatabase:
         :param keyword: 关联关键词。
         :return: 更新后的计数。
         """
-        if price_change == 1:
-            logger.info(f"{website}: {keyword} {item.product_url} 新品")
+        if price_change == 1:  # 新品
             new_num += 1
-        elif price_change in [3, 4]:
-            logger.info(f"{website}: {keyword} {item.product_url} 价格变动")
+        elif price_change in [3, 4]:  # 价格变动
             price_changed_num += 1
-        elif price_change == 2:
-            logger.info(f"{website}: {keyword} {item.product_url} 补货")
+        elif price_change == 2:  # 补货
             restocked_num += 1
 
         return new_num, price_changed_num, restocked_num
