@@ -95,13 +95,12 @@ class Suruga(BaseScrapy):
         prices = [
             extract_price(text)
             for text in [
-                item.css("p.price::text").get(),
                 item.css(
                     "div.item_price div p.mgnB5.mgnT5 span.text-red.fontS15 strong::text"
-                ).get(),
-                item.css("p.price_teika strong::text").get(),
+                ).get(), # 分店价格
+                item.css("p.price_teika strong::text").get(), # 本店价格
             ]
-            if text and text.strip() != "品切れ"
+            if text
         ]
 
         return min(prices, default=0) if prices else 0
@@ -120,21 +119,21 @@ class Suruga(BaseScrapy):
             3: 本店售空 第三方店铺在售
             None: 在所有其他情况下。
         """
-        price = item.css("p.price::text").get()  # 是否品切
-        price_teika = item.css("p.price_teika strong::text").get()  # 本店价格
-        price_third = item.css(
+
+        official_status = item.css("p.price::text").get()  # 本店是否品切
+
+        other_status = item.css(
             "div.mgnT10.highlight-box strong::text"
         ).get()  # 第三方店铺是否有货
 
         # 判断商品状态
-        if price and not price_third:
+        if official_status and not other_status:
             return 0  # 本店及第三方店铺均售空
-        elif not price and price_teika and price_third:
+        elif not official_status and other_status:
             return 1  # 本店及第三方店铺均在售
-        elif not price and price_teika and not price_third:
+        elif not official_status and not other_status:
             return 2  # 本店在售 第三方店铺售空
-        elif price and price_third:
+        elif official_status  and other_status:
             return 3  # 本店售空 第三方店铺在售
-
-        return None  # 其他情况
-    
+        else:
+            return None  # 其他情况

@@ -1,5 +1,6 @@
 import asyncio
 from string import Template
+from urllib.parse import urlparse, parse_qs
 
 from loguru import logger
 
@@ -11,6 +12,22 @@ def get_price_status_string(price_change):
     Return a string representation of the price status.
     """
     return {0: "不变", 1: "上新", 2: "补货", 3: "涨价", 4: "降价"}.get(price_change, "")
+
+
+def extract_keyword_from_url(keyword):
+    # 检查URL是否以http开头
+    if keyword.startswith("http"):
+        parsed_url = urlparse(keyword)
+        query_params = parse_qs(parsed_url.query)
+
+        # 检查关键参数并返回相应的值
+        for key in ["q", "search_word", "query"]:
+            if key in query_params:
+                # 通常参数是一个列表，返回第一个值
+                return query_params[key][0]
+
+    # 如果不是http开头的URL或者没有找到对应的关键字，则返回原始URL或None
+    return keyword
 
 
 async def process_search_keyword(
@@ -26,6 +43,7 @@ async def process_search_keyword(
     """
     Process a given search keyword for a website and execute necessary operations.
     """
+
     # 使用 logger.contextualize 方法添加上下文信息
     with logger.contextualize(
         website_name=website_config.website_name,
@@ -39,7 +57,7 @@ async def process_search_keyword(
                     f"--------- Start of iteration {iteration_count} ---------"
                 )  # 循环开始时的日志
                 logger.info(
-                    f"{website_config.website_name} : {search_query.keyword} 开始监控"
+                    f"{website_config.website_name} : {extract_keyword_from_url(search_query.keyword)} 开始监控"
                 )
                 products_to_process = set()
                 async for product in scraper.search(search_query, iteration_count):
