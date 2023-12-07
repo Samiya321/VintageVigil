@@ -170,8 +170,9 @@ class ProductDatabase:
         :param push_price_changes: 是否推送价格变化的商品。
         :yield: 处理后的每个产品信息。
         """
-        logger.info(f"{website}: {keyword} 搜索商品数量: {len(items)}")
         keyword = self.extract_keyword_from_url(keyword)
+        logger.info(f"{website}: {keyword}   搜索商品数量: {len(items)}")
+
         self.insert_or_ignore_keyword(website, keyword)
         keyword_id = self.get_keyword_id(website, keyword)
 

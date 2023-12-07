@@ -51,7 +51,10 @@ class TelegramClient:
 
         :param photo_url: 要发送的图片 URL。
         """
-        await self.try_send_photo_with_retries(photo_url, self.bot.send_photo)
+        await self.try_send_photo_with_retries(
+            photo_url,
+            lambda url: self.bot.send_photo(self.chat_id, photo=url),
+        )
 
     async def send_news(self, message: str, photo_url: str):
         """
@@ -118,9 +121,8 @@ class TelegramClient:
             if self.send_type == "text":
                 await self.send_text(message)
             elif self.send_type == "photo":
-                await self.send_text(message) if photo_url else await self.send_photo(
-                    photo_url
-                )
+                await self.send_text(message)
+                await self.send_photo(photo_url)
             elif self.send_type == "news":
                 await self.send_news(message, photo_url)
             else:

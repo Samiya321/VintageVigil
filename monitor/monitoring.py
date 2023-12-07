@@ -89,7 +89,7 @@ async def process_search_keyword(
                         # 创建并添加异步任务到列表
                         try:
                             logger.info(
-                                f"{website_config.website_name}: {search_query.keyword} {item.product_url} {get_price_status_string(item.price_change)}"
+                                f"{website_config.website_name}: {extract_keyword_from_url(search_query.keyword)} {item.product_url} {get_price_status_string(item.price_change)}"
                             )
                             notify_client = notification_clients[search_query.notify]
                             if notify_client.client_type == "telegram":
