@@ -23,26 +23,26 @@ class BaseScrapy(ABC):
         if max_pages == 0:
             return  # 直接返回，不执行任何任务
 
-        for start_page in range(1, max_pages + 1, BaseScrapy.MAX_CONCURRENT_PAGES):
-            end_page = min(start_page + BaseScrapy.MAX_CONCURRENT_PAGES - 1, max_pages)
-            tasks = [
-                self.fetch_products(search_term, page)
-                for page in range(start_page, end_page + 1)
-            ]
-            pages_content = await asyncio.gather(*tasks, return_exceptions=True)
-
-            # 遍历每一页的结果
-            for index, page_products in enumerate(pages_content, start=start_page):
-                # 处理或记录异常
-                if isinstance(page_products, Exception):
-                    logger.error(f"Error fetching page {index}: {page_products}")
-                    continue
-                # 跳过空列表
-                if not page_products:
-                    continue
-                # 迭代返回该页的商品信息
-                for product in page_products:
-                    yield product
+        # for start_page in range(1, max_pages + 1, BaseScrapy.MAX_CONCURRENT_PAGES):
+        #     end_page = min(start_page + BaseScrapy.MAX_CONCURRENT_PAGES - 1, max_pages)
+        #     tasks = [
+        #         self.fetch_products(search_term, page)
+        #         for page in range(start_page, end_page + 1)
+        #     ]
+        #     pages_content = await asyncio.gather(*tasks, return_exceptions=True)
+        tasks = [
+            self.fetch_products(search_term, page) for page in range(1, max_pages + 1)
+        ]
+        pages_content = await asyncio.gather(*tasks, return_exceptions=True)
+        # 遍历每一页的结果
+        for page_products in pages_content:
+            # 处理或记录异常 跳过空列表
+            if isinstance(page_products, Exception) or not page_products:
+                # 处理异常或空结果
+                continue
+            # 迭代返回该页的商品信息
+            for product in page_products:
+                yield product
 
     # 搜索具体页数里的内容
     async def fetch_products(
@@ -116,15 +116,15 @@ class BaseScrapy(ABC):
         Returns:
             SearchResultItem: The processed product.
         """
-        name = await self.get_item_name(item = item)
+        name = await self.get_item_name(item=item)
 
-        product_id = await self.get_item_id(item = item)
-        
+        product_id = await self.get_item_id(item=item)
+
         product_url = await self.get_item_product_url(item=item, id=product_id)
 
         image_url = await self.get_item_image_url(item=item, id=product_id)
 
-        price = await self.get_item_price(item = item)
+        price = await self.get_item_price(item=item)
 
         site = await self.get_item_site()
 
