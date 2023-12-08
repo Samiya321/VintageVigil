@@ -72,7 +72,7 @@ class MercariSearch(BaseSearch):
                 "sort": sort_type,
                 "order": "ORDER_DESC",
                 "status": getattr(
-                    search, "status", ["STATUS_ON_SALE", "STATUS_TRADING"]
+                    search, "status", ["STATUS_ON_SALE"]
                 ),
                 "categoryId": getattr(search, "category", []),
                 "brandId": getattr(search, "brandId", []),
