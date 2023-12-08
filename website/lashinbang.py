@@ -5,18 +5,17 @@ from .base.scraper import BaseScrapy
 class Lashinbang(BaseScrapy):
     def __init__(self, client):
         super().__init__(
-            base_url="https://lashinbang-f-s.snva.jp", page_size=24, client=client
+            base_url="https://lashinbang-f-s.snva.jp", page_size=100, client=client
         )
 
     async def create_search_params(self, search, page: int) -> dict:
-        limit = 100
         return {
             "q": search.keyword,
             "s6o": 1,
             "pl": 1,
             "sort": getattr(search, "sort", "Number18%2CScore"),
-            "limit": limit,
-            "o": (page - 1) * limit,  # Offset calculation for pagination
+            "limit": self.page_size,
+            "o": (page - 1) * self.page_size,  # Offset calculation for pagination
             "n6l": 1,
             "callback": "callback",
             "controller": "lashinbang_front",
