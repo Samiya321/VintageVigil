@@ -311,26 +311,31 @@ class ProductDatabase:
         :return: 一个字典，包含产品 ID 和对应的价格及状态。
         """
 
-        # 构造一个包含所有项目 ID 和关键字 ID 的元组列表
-        ids = [(item.id, keyword_id) for item in items]
+        prices_statuses = {}
 
-        # 为每个 (id, keyword_id) 对创建占位符 "?"
-        placeholders = ",".join(["(?, ?)" for _ in ids])
+        # 创建临时表
+        self.conn.execute(
+            "CREATE TEMPORARY TABLE temp_ids (id TEXT, keyword_id INTEGER)"
+        )
 
-        # 构造查询字符串
-        query = f"SELECT id, price, status FROM products WHERE (id, keyword_id) IN ({placeholders})"
-        # 将元组列表展开为参数列表
-        params = [param for tup in ids for param in tup]
+        # 插入数据到临时表
+        self.conn.executemany(
+            "INSERT INTO temp_ids (id, keyword_id) VALUES (?, ?)",
+            [(item.id, keyword_id) for item in items],
+        )
 
         # 执行查询
-        cursor = self.conn.execute(query, params)
-        result = cursor.fetchall()
+        query = """
+        SELECT p.id, p.price, p.status FROM products p
+        INNER JOIN temp_ids t ON p.id = t.id AND p.keyword_id = t.keyword_id
+        """
+        cursor = self.conn.execute(query)
+        for id, price, status in cursor.fetchall():
+            prices_statuses[id] = {"price": price, "status": status}
 
-        # 构造并返回包含查询结果的字典
-        # 字典的结构为 {产品ID: {"price": 价格, "status": 状态}}
-        prices_statuses = {
-            id: {"price": price, "status": status} for id, price, status in result
-        }
+        # 删除临时表
+        self.conn.execute("DROP TABLE temp_ids")
+
         return prices_statuses
 
     def close(self):
