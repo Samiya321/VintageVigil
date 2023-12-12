@@ -161,7 +161,7 @@ class BaseSearch(ABC):
         if id[0] == "m" and id[1:].isdigit():
             product_url = "https://jp.mercari.com/item/{}".format(id)
         else:
-            product_url = "https://jp.mercari.com/shops/product/{}".format(id)
+            product_url = "https://mercari-shops.com/products/{}".format(id)
         return product_url
 
     async def get_item_image_url(self, item, id):
