@@ -2,8 +2,8 @@
 
 while true; do
     # 使用pgrep检查main.py是否在运行
-    if ! pgrep -f "python3 /root/VintageVigil/main.py" > /dev/null; then # 不输出进程id
-        nohup python3 /root/VintageVigil/main.py > /dev/null 2>&1 & # 丢弃输出
+    if ! pgrep -f "python /root/VintageVigil/main.py" > /dev/null; then # 不输出进程id
+        python /root/VintageVigil/main.py > /dev/null 2>&1 # 丢弃输出
     fi
-    sleep 60  # 检查间隔时间，此处设置为每60秒检查一次
+    sleep 180  # 检查间隔时间，此处设置为每180秒检查一次
 done
