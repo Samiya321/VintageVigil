@@ -72,7 +72,7 @@ class MercariSearch(BaseSearch):
                 "sort": sort_type,
                 "order": "ORDER_DESC",
                 "status": getattr(
-                    search, "status", ["STATUS_ON_SALE"]
+                    search, "status", ["STATUS_ON_SALE", "STATUS_TRADING"]
                 ),
                 "categoryId": getattr(search, "category", []),
                 "brandId": getattr(search, "brandId", []),
@@ -83,9 +83,10 @@ class MercariSearch(BaseSearch):
             # this is the default in their site, so leaving it as these 2
             "defaultDatasets": ["DATASET_TYPE_MERCARI", "DATASET_TYPE_BEYOND"],
         }
+
     async def get_item_site(self):
         return "mercari"
-    
+
     async def get_item_status(self, item):
         if item.get("status") == "ITEM_STATUS_ON_SALE":
             status = 1
