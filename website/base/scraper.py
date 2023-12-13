@@ -23,17 +23,26 @@ class BaseScrapy(ABC):
         if max_pages == 0:
             return  # 直接返回，不执行任何任务
 
-        # for start_page in range(1, max_pages + 1, BaseScrapy.MAX_CONCURRENT_PAGES):
-        #     end_page = min(start_page + BaseScrapy.MAX_CONCURRENT_PAGES - 1, max_pages)
-        #     tasks = [
-        #         self.fetch_products(search_term, page)
-        #         for page in range(start_page, end_page + 1)
-        #     ]
-        #     pages_content = await asyncio.gather(*tasks, return_exceptions=True)
-        tasks = [
-            self.fetch_products(search_term, page) for page in range(1, max_pages + 1)
-        ]
-        pages_content = await asyncio.gather(*tasks, return_exceptions=True)
+        # 遍历每一页，每次处理最多 MAX_CONCURRENT_PAGES 个页面
+        for start_page in range(1, max_pages + 1, BaseScrapy.MAX_CONCURRENT_PAGES):
+            # 计算当前批次的结束页码（确保不超过最大页码）
+            end_page = min(start_page + BaseScrapy.MAX_CONCURRENT_PAGES - 1, max_pages)
+
+            # 创建一个任务列表，每个任务为异步获取指定页面的产品
+            tasks = [
+                self.fetch_products(search_term, page)
+                for page in range(start_page, end_page + 1)
+            ]
+
+            # 异步执行所有任务，等待所有页面内容的返回
+            # 使用 return_exceptions=True 来避免由于单个任务的异常而导致整个批次失败
+            pages_content = await asyncio.gather(*tasks, return_exceptions=True)
+
+        # tasks = [
+        #     self.fetch_products(search_term, page) for page in range(1, max_pages + 1)
+        # ]
+        # pages_content = await asyncio.gather(*tasks, return_exceptions=True)
+
         # 遍历每一页的结果
         for page_products in pages_content:
             # 处理或记录异常 跳过空列表
