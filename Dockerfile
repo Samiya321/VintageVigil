@@ -15,5 +15,4 @@ COPY . .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # 设置容器启动时执行的命令
-# CMD ["python", "./main.py"]
 CMD ["bash", "./run_checker.sh"]

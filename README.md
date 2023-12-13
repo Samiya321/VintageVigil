@@ -15,7 +15,7 @@ VintageVigil 是一个专门监控日本多个二手网站上新商品的Python�
 
 - 关键词监控：监控指定关键词的商品上新。
 - 特定卖家监控（仅限Mercari）：监控指定卖家的所有商品。
-- 多网站、多关键词、多卖家监控支持。
+- 多网站、多关键词、多卖家监控支持，可分别设置不同的推送方式。
 - 多种推送方式，包括Telegram和企业微信。
 - 自定义设置监控延迟、汇率、商品价格区间、商品状态、品类和品牌等。
 - 自定义设置是否推送涨价和降价的商品，避免有些网站短时间内大量商品的价格变动
@@ -27,12 +27,12 @@ VintageVigil 是一个专门监控日本多个二手网站上新商品的Python�
 ```bash
 VintageVigil 
 ├── common
-│   ├── config              # 配置文件操作
+│   ├── config              # 读取配置文件
 │   ├── database            # 数据库操作
-│   ├── logger              # 日志操作
-│   └── notify              # 推送消息
+│   ├── logger              # 日志打印
+│   └── notify              # 消息推送
 ├── monitor
-│   ├── initialization.py   # 初始化模块
+│   ├── initialization.py   # 资源初始化
 │   ├── manager.py 
 │   └── monitoring.py       # 实际监控             
 ├── website
@@ -85,7 +85,7 @@ WECOM_CORP_SECRET=""
 # 企业微信应用的AgentID
 WECOM_AGENT_ID_1=""
 ```
-4. 用户配置：在 `user` 目录下新建文件夹和 `config.toml` 文件，参考 `config_example.toml` 文件进行配置。
+4. 用户配置：在 `user` 目录下新建一个文件夹并在该目录下新建 `config.toml` 文件，参考 `config_example.toml` 文件进行配置。 如有多个用户，可在 `user` 目录下新建多个文件夹，每个文件夹下都需要有一个 `config.toml` 文件。
 5. 启动项目：
 
    ```shell
@@ -94,7 +94,7 @@ WECOM_AGENT_ID_1=""
 
    
 
-### Docker运行
+### Docker Compose运行
 
 1. 创建 `docker-compose.yml` 文件并配置。
 ```yaml
@@ -117,13 +117,18 @@ services:
       - WECOM_CORP_SECRET=
       - WECOM_AGENT_ID_1=
 ```
-2. 在同级目录下新建 `user` 目录，并按照需求配置 `config.toml` 文件。
+2. 在`docker-compose.yml`同级目录下新建 `user` 目录，并按照需求配置 `config.toml` 文件。
 3. 启动容器：
 
    ```shell
    docker-compose up -d
    ```
+4. 更新容器：
 
+   ```shell
+   docker-compose pull
+   docker-compose up -d
+   ```
    
 ## 日志查看
 
