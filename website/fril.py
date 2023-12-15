@@ -39,7 +39,8 @@ class Fril(BaseScrapy):
         ).get()
         hit_number = re.search(r"約(.+)件中", hit_text).group(1)
         hit_number = hit_number.replace(",", "")
-        return await self.extract_number_from_content(hit_number, self.page_size)
+        max_pages = await self.extract_number_from_content(hit_number, self.page_size)
+        return max_pages if max_pages < 100 else 100
 
     async def get_response_items(self, response):
         selector = Selector(response)

@@ -1,9 +1,9 @@
 import sqlite3
-from typing import Tuple, List, Optional
-from urllib.parse import urlparse, parse_qs
+from typing import Tuple, Optional
 
 from loguru import logger
 
+from ..utils import extract_keyword_from_url
 
 class ProductDatabase:
     # SQL 语句集中管理
@@ -143,20 +143,6 @@ class ProductDatabase:
         """
         self._safe_execute("update_product_count", (keyword_id, keyword_id, keyword_id))
 
-    def extract_keyword_from_url(self, keyword):
-        # 检查URL是否以http开头
-        if keyword.startswith("http"):
-            parsed_url = urlparse(keyword)
-            query_params = parse_qs(parsed_url.query)
-
-            # 检查关键参数并返回相应的值
-            for key in ["q", "search_word", "query"]:
-                if key in query_params:
-                    # 通常参数是一个列表，返回第一个值
-                    return query_params[key][0]
-
-        # 如果不是http开头的URL或者没有找到对应的关键字，则返回原始URL或None
-        return keyword
 
     def upsert_products(
         self, items, keyword: str, website: str, push_price_changes: bool
@@ -170,7 +156,7 @@ class ProductDatabase:
         :param push_price_changes: 是否推送价格变化的商品。
         :yield: 处理后的每个产品信息。
         """
-        keyword = self.extract_keyword_from_url(keyword)
+        keyword = extract_keyword_from_url(keyword)
         logger.info(f"{website}: {keyword}   搜索商品数量: {len(items)}")
 
         self.insert_or_ignore_keyword(website, keyword)

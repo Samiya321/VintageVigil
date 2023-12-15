@@ -5,17 +5,20 @@ from uuid import uuid4
 
 
 class MercariSearch(BaseSearch):
+    MAX_CONCURRENT_PAGES = 10
+
     def __init__(self, client):
         super().__init__("https://api.mercari.jp/v2/entities:search", client)
 
     async def search(
         self, search, iteration_count
     ) -> AsyncGenerator[SearchResultItem, None]:
-        # iteration_count = 2
         score_page, created_time_page = (100, 100) if iteration_count == 0 else (3, 7)
         tasks = [
-            self.search_with_sort(search, "SORT_SCORE", score_page),
-            self.search_with_sort(search, "SORT_CREATED_TIME", created_time_page),
+            self.search_with_sort(search, "SORT_SCORE", score_page, iteration_count),
+            self.search_with_sort(
+                search, "SORT_CREATED_TIME", created_time_page, iteration_count
+            ),
         ]
         all_products = await asyncio.gather(*tasks, return_exceptions=True)
 
@@ -26,12 +29,27 @@ class MercariSearch(BaseSearch):
                 yield product
 
     async def search_with_sort(
-        self, search, sort_type, max_pages
+        self, search, sort_type, max_pages, iteration_count
     ) -> List[SearchResultItem]:
-        tasks = [
-            self.fetch_products(search, page, sort_type) for page in range(max_pages)
-        ]
+        async def fetch_with_semaphore(page):
+            async with semaphore:
+                return await self.fetch_products(search, page, sort_type)
+
+        if iteration_count == 0:
+            # 限制最大页数
+            # 确保并发数不超过 MAX_CONCURRENT_PAGES 或 max_pages
+            concurrent_pages = min(self.MAX_CONCURRENT_PAGES, max_pages)
+            # 使用 semaphore 来限制并发数
+            semaphore = asyncio.Semaphore(concurrent_pages)
+            tasks = [fetch_with_semaphore(page) for page in range(1, max_pages + 1)]
+        else:
+            tasks = [
+                self.fetch_products(search, page, sort_type)
+                for page in range(max_pages)
+            ]
+            
         pages_content = await asyncio.gather(*tasks, return_exceptions=True)
+
         return [
             product
             for page_products in pages_content

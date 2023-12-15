@@ -5,7 +5,7 @@ from .common_imports import *
 
 
 class BaseScrapy(ABC):
-    MAX_CONCURRENT_PAGES = 100  # Moved to a class-level constant
+    MAX_CONCURRENT_PAGES = 10  # Moved to a class-level constant
     MAX_RETRIES = 3  # 定义最大重试次数
     RETRY_DELAY = 1  # 定义初始重试延迟（秒）
 
@@ -20,24 +20,29 @@ class BaseScrapy(ABC):
     ) -> AsyncGenerator[SearchResultItem, None]:
         # 获取最大页数
         max_pages = await self.get_max_pages(search_term)
+
+        # 只处理前20页的内容
+        if iteration_count != 0 and max_pages > 30:
+            max_pages = 30
+
         if max_pages == 0:
             return  # 直接返回，不执行任何任务
 
-        # 遍历每一页，每次处理最多 MAX_CONCURRENT_PAGES 个页面
-        for start_page in range(1, max_pages + 1, BaseScrapy.MAX_CONCURRENT_PAGES):
-            # 计算当前批次的结束页码（确保不超过最大页码）
-            end_page = min(start_page + BaseScrapy.MAX_CONCURRENT_PAGES - 1, max_pages)
+        # 限制最大页数
+        # 确保并发数不超过 MAX_CONCURRENT_PAGES 或 max_pages
+        concurrent_pages = min(self.MAX_CONCURRENT_PAGES, max_pages)
 
-            # 创建一个任务列表，每个任务为异步获取指定页面的产品
-            tasks = [
-                self.fetch_products(search_term, page)
-                for page in range(start_page, end_page + 1)
-            ]
+        # 使用 semaphore 来限制并发数
+        semaphore = asyncio.Semaphore(concurrent_pages)
 
-            # 异步执行所有任务，等待所有页面内容的返回
-            # 使用 return_exceptions=True 来避免由于单个任务的异常而导致整个批次失败
-            pages_content = await asyncio.gather(*tasks, return_exceptions=True)
+        async def fetch_with_semaphore(page):
+            async with semaphore:
+                return await self.fetch_products(search_term, page)
 
+        tasks = [fetch_with_semaphore(page) for page in range(1, max_pages + 1)]
+        pages_content = await asyncio.gather(*tasks, return_exceptions=True)
+
+        # 全并发处理每一页
         # tasks = [
         #     self.fetch_products(search_term, page) for page in range(1, max_pages + 1)
         # ]
