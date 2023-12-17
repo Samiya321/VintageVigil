@@ -22,8 +22,8 @@ class BaseScrapy(ABC):
         max_pages = await self.get_max_pages(search_term)
 
         # 只处理前20页的内容
-        if iteration_count != 0 and max_pages > 30:
-            max_pages = 30
+        # if iteration_count != 0 and max_pages > 30:
+        #     max_pages = 30
 
         if max_pages == 0:
             return  # 直接返回，不执行任何任务
