@@ -50,8 +50,8 @@ async def process_search_keyword(
                             telegram_tasks,
                         )
 
-                await _execute_telegram_tasks(telegram_tasks)
-
+                        await _execute_telegram_tasks(telegram_tasks)
+                        
                 logger.info(f"--------- End of iteration {iteration_count} ---------\n")
                 iteration_count += 1
                 await asyncio.sleep(website_config.delay)

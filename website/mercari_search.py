@@ -41,7 +41,7 @@ class MercariSearch(BaseSearch):
             concurrent_pages = min(self.MAX_CONCURRENT_PAGES, max_pages)
             # 使用 semaphore 来限制并发数
             semaphore = asyncio.Semaphore(concurrent_pages)
-            tasks = [fetch_with_semaphore(page) for page in range(1, max_pages + 1)]
+            tasks = [fetch_with_semaphore(page) for page in range(max_pages)]
         else:
             tasks = [
                 self.fetch_products(search, page, sort_type)
