@@ -42,21 +42,20 @@ class BaseSearch(ABC):
         self.root_url = root_url
         self.client = client
 
-    async def search(self, **kwargs) -> AsyncGenerator[SearchResultItem, None]:
+    async def search(self, **kwargs):
         pass  # 由子类实现
 
-    async def fetch_products(self, **kwargs) -> AsyncGenerator[SearchResultItem, None]:
+    async def fetch_products(self, **kwargs):
         pass  # 由子类实现
 
     async def get_response(self, method, data=None, params=None):
         max_retries = 3  # 最大重试次数
 
         for attempt in range(max_retries):
+            request_method = method.lower()
+            request_info = f"请求方法: {'POST' if request_method == 'post' else 'GET'}，尝试次数: {attempt + 1}"
             try:
                 headers = self.create_headers(method.upper())
-                request_method = method.lower()
-                request_info = f"请求方法: {'POST' if request_method == 'post' else 'GET'}，尝试次数: {attempt + 1}"
-
                 if request_method == "post":
                     response = await self.client.post(
                         url=self.root_url,
@@ -180,9 +179,9 @@ class BaseSearch(ABC):
         return image_url
 
     @abstractmethod
-    async def get_item_site(self):
+    async def get_item_site(self) -> str:
         pass
 
     @abstractmethod
-    async def get_item_status(self, item):
+    async def get_item_status(self, item) -> int:
         pass

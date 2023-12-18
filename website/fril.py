@@ -23,11 +23,13 @@ class Fril(BaseScrapy):
             "page": page,
             "order": "desc",
         }
+
         if "https" in search.keyword:
             for param in ["query", "transaction", "sort", "order"]:
-                params[param] = self.get_param_value(
-                    search.keyword, param, params[param]
-                )
+                # 从 URL 提取参数值，如果未找到，则使用默认值
+                param_value = self.get_param_value(search.keyword, param)
+                if param_value:
+                    params[param] = param_value
 
         return params
 
@@ -37,10 +39,17 @@ class Fril(BaseScrapy):
         hit_text = selector.css(
             "div.col-sm-12.col-xs-3.page-count.text-right::text"
         ).get()
-        hit_number = re.search(r"約(.+)件中", hit_text).group(1)
-        hit_number = hit_number.replace(",", "")
-        max_pages = await self.extract_number_from_content(hit_number, self.page_size)
-        return max_pages if max_pages < 100 else 100
+
+        # 确保 hit_text 不是 None
+        if hit_text:
+            match = re.search(r"約(.+)件中", hit_text)
+            if match:
+                hit_number = match.group(1).replace(",", "")
+                max_pages = await self.extract_number_from_content(
+                    hit_number, self.page_size
+                )
+                return min(max_pages, 100) if max_pages else 100
+        return 0
 
     async def get_response_items(self, response):
         selector = Selector(response)
@@ -48,11 +57,11 @@ class Fril(BaseScrapy):
 
     async def get_item_id(self, item: Selector):
         product_url = item.css(".item-box__image-wrapper a::attr(href)").get()
-        return (
-            re.search("fril.jp/([0-9a-z]+)", product_url).group(1)
-            if product_url
-            else None
-        )
+        if product_url:
+            match = re.search("fril.jp/([0-9a-z]+)", product_url)
+            if match:
+                return match.group(1)
+        return None
 
     async def get_item_name(self, item: Selector):
         return item.css(".item-box__item-name span::text").get()

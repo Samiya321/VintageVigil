@@ -29,6 +29,7 @@ eggs/
 
 # 测试代码
 tests/
+assets/
 
 # 用户配置
 user/*/*

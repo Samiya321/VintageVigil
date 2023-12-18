@@ -38,7 +38,9 @@ class JumpShop(BaseScrapy):
         res = await self.get_response(search, 1)
         selector = Selector(res)
         content = selector.css('meta[property="og:title"]').attrib.get("content", "")
-        return await self.extract_number_from_content(content, self.page_size)
+
+        max_pages = await self.extract_number_from_content(content, self.page_size)
+        return max_pages or 0
 
     async def get_response_items(self, response):
         selector = Selector(response)

@@ -18,7 +18,7 @@ class MercariMercapi:
                     id=item.id_,
                     name=item.name,
                     price=item.price,
-                    image_url=item.thumbnails[0] if item.thumbnails else None,
+                    image_url=item.thumbnails[0] if item.thumbnails else "",
                     product_url=f"https://jp.mercari.com/item/{item.id_}",
                     site = "mercapi",
                     status = self.get_item_status(item)

@@ -133,9 +133,9 @@ class ProductDatabase:
         result = self._safe_execute(
             "select_keyword_id", (website, keyword), fetch_one=True
         )
-        return result[0] if result else None
+        return result[0] if isinstance(result, tuple) and result else 0
 
-    def update_product_count(self, keyword_id: int):
+    def update_product_count(self, keyword_id):
         """
         更新特定关键词 ID 的产品数量。
 
@@ -288,7 +288,7 @@ class ProductDatabase:
                     self.SQL_STATEMENTS["upsert_product"], to_insert_or_update
                 )
 
-    def _bulk_fetch_prices_statuses(self, items, keyword_id: int) -> dict:
+    def _bulk_fetch_prices_statuses(self, items, keyword_id) -> dict:
         """
         批量获取产品的当前价格和状态。
 

@@ -26,12 +26,12 @@ class Paypay(BaseScrapy):
         }
 
     async def get_max_pages(self, search) -> int:
-        res = await self.get_response(search, 1)
-        data = json.loads(res)
+        response = await self.get_response(search, 1)
+        data = json.loads(response) if response else {}
         return ceil(data.get("totalResultsAvailable", 0) / self.page_size)
 
     async def get_response_items(self, response):
-        data = json.loads(response)
+        data = json.loads(response) if response else {}
         return data.get("items", [])
 
     async def get_item_id(self, item):

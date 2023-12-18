@@ -5,9 +5,10 @@ from .common_imports import *
 
 
 class BaseScrapy(ABC):
-    MAX_CONCURRENT_PAGES = 10  # Moved to a class-level constant
-    MAX_RETRIES = 3  # 定义最大重试次数
-    RETRY_DELAY = 1  # 定义初始重试延迟（秒）
+    MAX_CONCURRENT_PAGES = 10  # 最大并发页数
+    MAX_PAGES = 30  # 最大处理页数
+    MAX_RETRIES = 3  # 最大重试次数
+    RETRY_DELAY = 1  # 初始重试延迟（秒）
 
     def __init__(self, base_url, page_size, client, headers=None):
         self.base_url = base_url
@@ -21,14 +22,14 @@ class BaseScrapy(ABC):
         # 获取最大页数
         max_pages = await self.get_max_pages(search_term)
 
-        # 只处理前20页的内容
-        # if iteration_count != 0 and max_pages > 30:
-        #     max_pages = 30
+        # 限制最大页数
+        if iteration_count != 0:
+            max_pages = min(max_pages, self.MAX_PAGES)
 
         if max_pages == 0:
             return  # 直接返回，不执行任何任务
 
-        # 限制最大页数
+        # 限制并发页数
         # 确保并发数不超过 MAX_CONCURRENT_PAGES 或 max_pages
         concurrent_pages = min(self.MAX_CONCURRENT_PAGES, max_pages)
 
@@ -51,7 +52,10 @@ class BaseScrapy(ABC):
         # 遍历每一页的结果
         for page_products in pages_content:
             # 处理或记录异常 跳过空列表
-            if isinstance(page_products, Exception) or not page_products:
+            if (
+                isinstance(page_products, (Exception, BaseException))
+                or not page_products
+            ):
                 # 处理异常或空结果
                 continue
             # 迭代返回该页的商品信息
@@ -59,9 +63,7 @@ class BaseScrapy(ABC):
                 yield product
 
     # 搜索具体页数里的内容
-    async def fetch_products(
-        self, search_term, page: int
-    ) -> AsyncGenerator[SearchResultItem, None]:
+    async def fetch_products(self, search_term, page: int) -> List[SearchResultItem]:
         # 获取响应体的text
         response_text = await self.get_response(search_term, page)
         if response_text is None:
@@ -71,18 +73,22 @@ class BaseScrapy(ABC):
         # 获取商品信息，json格式或者Selecter
         items = await self.get_response_items(response_text)
         # logger.info(f"Got {len(items)} items on page {page}")
-        # 如果商品列表为空，则直接返回[]
-        if not items:
-            return []
 
-        tasks = [self.create_product_from_card(item) for item in items]
-        return await asyncio.gather(*tasks, return_exceptions=True)
+        # 如果商品列表为空，则直接返回
+        if not items:
+            return []  # 如果没有项目，直接退出函数
+
+        tasks = [self.create_product_from_card(item) for item in items]  # type: ignore
+        products = await asyncio.gather(*tasks, return_exceptions=True)
+        return [
+            product for product in products if isinstance(product, SearchResultItem)
+        ]
 
     # 请求链接和参数，可在子类中重写
     async def create_request_url(self, params):
         return self.base_url, params
 
-    async def get_response(self, search_term, page: int):
+    async def get_response(self, search_term, page: int) -> Optional[str]:
         params = await self.create_search_params(search_term, page)
         url, params = await self.create_request_url(params)
 
@@ -168,11 +174,12 @@ class BaseScrapy(ABC):
             Optional[int]: The total number of pages or None if no number is found.
         """
         try:
-            number = int(re.search(r"\d+", hit_number.replace(",", "")).group())
+            match = re.search(r"\d+", hit_number.replace(",", ""))
+            number = int(match.group()) if match else 0
             return ceil(number / page_size)
         except AttributeError:
             logger.error("No number found")
-            return None
+            return 0
 
     def get_param_value(self, url: str, param_name: str) -> Optional[str]:
         """
@@ -218,29 +225,29 @@ class BaseScrapy(ABC):
         pass
 
     @abstractmethod
-    async def get_item_site(self):
+    async def get_item_site(self) -> str:
         pass
 
     @abstractmethod
-    async def get_item_id(self, item):
+    async def get_item_id(self, item) -> str:
         pass
 
     @abstractmethod
-    async def get_item_name(self, item):
+    async def get_item_name(self, item) -> str:
         pass
 
     @abstractmethod
-    async def get_item_price(self, item):
+    async def get_item_price(self, item) -> float:
         pass
 
     @abstractmethod
-    async def get_item_product_url(self, item, id):
+    async def get_item_product_url(self, item, id) -> str:
         pass
 
     @abstractmethod
-    async def get_item_image_url(self, item, id):
+    async def get_item_image_url(self, item, id) -> str:
         pass
 
     @abstractmethod
-    async def get_item_status(self, item):
+    async def get_item_status(self, item) -> int:
         pass

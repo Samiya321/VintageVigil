@@ -41,7 +41,6 @@ class MonitoringController:
         )
 
         # Initialize telegram bots
-        asyncio_helper.CONNECT_TIMEOUT = 10
         asyncio_helper.REQUEST_TIMEOUT = 10
         asyncio_helper.proxy = proxy or None
 

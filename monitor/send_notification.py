@@ -34,7 +34,7 @@ def _create_notification_message(item, message_template, website_config):
     price_currency = item.price * website_config.exchange_rate
     price = (
         f"{item.pre_price} 円 ==> {item.price}"
-        if item.pre_price is not None
+        if item.pre_price
         else item.price
     )
     return message_template.substitute(

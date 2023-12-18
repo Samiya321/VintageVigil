@@ -1,21 +1,21 @@
 class SearchResultItem:
     def __init__(
         self,
-        site: str = None,
-        id: str = None,
-        name: str = None,
-        price: float = None,
+        site: str,
+        id: str,
+        name: str,
+        product_url: str,
+        image_url: str,
+        status: int,
+        price: float,
         price_change: int = 0,
         pre_price=None,
-        product_url: str = None,
-        image_url: str = None,
-        status: int = None,
         # extra_data=None,
     ):
         self.site = site
         self.id = id
         self.name = name
-        self.price = float(price) if price is not None else None
+        self.price = float(price) if price else None
         self.price_change = price_change
         self.pre_price = pre_price
         self.product_url = product_url
@@ -31,7 +31,8 @@ class SearchResultItem:
             return NotImplemented
         return (self.id) == (other.id)
 
-class SearchResultItemState():
+
+class SearchResultItemState:
     SOLD_OUT = 0,
     ON_SALE = 1,
     ON_SALE_OWN = 2,

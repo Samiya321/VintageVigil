@@ -23,7 +23,9 @@ class Lashinbang(BaseScrapy):
 
     async def get_max_pages(self, search) -> int:
         res = await self.get_response(search, 1)
-        data = json.loads(re.search(r"{.*}", res, re.DOTALL).group())
+        match = re.search(r"{.*}", res, re.DOTALL) if res else None
+        json_data = match.group() if match else "{}"
+        data = json.loads(json_data)
         return (
             data.get("kotohaco", {})
             .get("result", {})
@@ -32,7 +34,9 @@ class Lashinbang(BaseScrapy):
         )
 
     async def get_response_items(self, response):
-        data = json.loads(re.search(r"{.*}", response, re.DOTALL).group())
+        match = re.search(r"{.*}", response, re.DOTALL)
+        json_data = match.group() if match else "{}"
+        data = json.loads(json_data)
         return data.get("kotohaco", {}).get("result", {}).get("items", [])
 
     async def get_item_id(self, item):

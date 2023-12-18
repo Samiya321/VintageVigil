@@ -15,39 +15,31 @@ class MercariSearch(BaseSearch):
     ) -> AsyncGenerator[SearchResultItem, None]:
         score_page, created_time_page = (100, 100) if iteration_count == 0 else (3, 7)
         tasks = [
-            self.search_with_sort(search, "SORT_SCORE", score_page, iteration_count),
-            self.search_with_sort(
-                search, "SORT_CREATED_TIME", created_time_page, iteration_count
-            ),
+            self.search_with_sort(search, "SORT_SCORE", score_page),
+            self.search_with_sort(search, "SORT_CREATED_TIME", created_time_page),
         ]
         all_products = await asyncio.gather(*tasks, return_exceptions=True)
 
         for products in all_products:
-            if isinstance(products, Exception):
+            if isinstance(products, (Exception, BaseException)):
                 continue
             for product in products:
                 yield product
 
     async def search_with_sort(
-        self, search, sort_type, max_pages, iteration_count
+        self, search, sort_type, max_pages
     ) -> List[SearchResultItem]:
         async def fetch_with_semaphore(page):
             async with semaphore:
                 return await self.fetch_products(search, page, sort_type)
 
-        if iteration_count == 0:
-            # 限制最大页数
-            # 确保并发数不超过 MAX_CONCURRENT_PAGES 或 max_pages
-            concurrent_pages = min(self.MAX_CONCURRENT_PAGES, max_pages)
-            # 使用 semaphore 来限制并发数
-            semaphore = asyncio.Semaphore(concurrent_pages)
-            tasks = [fetch_with_semaphore(page) for page in range(max_pages)]
-        else:
-            tasks = [
-                self.fetch_products(search, page, sort_type)
-                for page in range(max_pages)
-            ]
-            
+        # 限制最大页数
+        # 确保并发数不超过 MAX_CONCURRENT_PAGES 或 max_pages
+        concurrent_pages = min(self.MAX_CONCURRENT_PAGES, max_pages)
+        # 使用 semaphore 来限制并发数
+        semaphore = asyncio.Semaphore(concurrent_pages)
+        tasks = [fetch_with_semaphore(page) for page in range(max_pages)]
+
         pages_content = await asyncio.gather(*tasks, return_exceptions=True)
 
         return [
@@ -65,13 +57,19 @@ class MercariSearch(BaseSearch):
                 self.create_data(search, page, sort_type), ensure_ascii=False
             ).encode("utf-8")
             response = await self.get_response("POST", data=serialized_data)
-            if not response or "items" not in response:
+            if "items" not in response:
                 return []  # 处理空响应或缺少项的情况
 
             tasks = [self.create_product_from_card(item) for item in response["items"]]
-            return await asyncio.gather(*tasks, return_exceptions=True)
-        except Exception:
+            products = await asyncio.gather(*tasks, return_exceptions=True)
+
+            # 过滤掉异常对象
+            return [
+                product for product in products if isinstance(product, SearchResultItem)
+            ]
+        except Exception as e:
             # 处理可能的异常情况，例如网络错误或解析失败, 或者根据需要进行其他合适的错误处理
+            logger.error(f"Error fetching products: {e}")
             return []
 
     def create_data(self, search, page, sort_type):

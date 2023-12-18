@@ -15,7 +15,13 @@ class SearchConfig:
                     f"Error: '{key}' is required in search configurations."
                 )
 
-        kwargs["notify"] = config_default.NOTIFY_MAPPING.get(kwargs.get("notify"))
+        notify_key = kwargs.get("notify")
+        if notify_key:
+            kwargs["notify"] = config_default.NOTIFY_MAPPING.get(
+                notify_key, "default_mapped_value" # type: ignore
+            ) 
+        else:
+            kwargs["notify"] = "default_mapped_value"
 
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -23,7 +29,12 @@ class SearchConfig:
 
 class WebsiteCommon:
     def __init__(
-            self, website_name: str, delay: float, exchange_rate: float, push_price_changes, msg_tpl: str
+        self,
+        website_name: str,
+        delay: float,
+        exchange_rate: float,
+        push_price_changes,
+        msg_tpl: str,
     ):
         self.website_name = website_name
         self.delay = delay
@@ -34,7 +45,7 @@ class WebsiteCommon:
 
 class Website:
     def __init__(
-            self, common: WebsiteCommon, searches: Optional[List[SearchConfig]] = None
+        self, common: WebsiteCommon, searches: Optional[List[SearchConfig]] = None
     ):
         self.common = common
         self.searches = searches
@@ -42,7 +53,7 @@ class Website:
 
 class Config:
     def __init__(
-            self, user: str, notify_config: Dict[str, str], websites: List[Website]
+        self, user: str, notify_config: Dict[str, str], websites: List[Website]
     ):
         self.user = user
         self.notify_config = notify_config
@@ -52,15 +63,17 @@ class Config:
     def validate_notify_config(self):
         notify_config = self.notify_config
 
+        # 使用默认值进行安全检查
         notify_config["tg_send_type"] = config_default.SEND_TYPE_MAPPING.get(
-            notify_config.get("tg_send_type", ""), config_default.DEFAULT_SEND_TYPE
+            notify_config.get("tg_send_type", ""), config_default.DEFAULT_SEND_TYPE # type: ignore
         )
         notify_config["we_send_type"] = config_default.SEND_TYPE_MAPPING.get(
-            notify_config.get("we_send_type", ""), config_default.DEFAULT_SEND_TYPE
+            notify_config.get("we_send_type", ""), config_default.DEFAULT_SEND_TYPE # type: ignore
         )
 
+        # 确保至少提供了一个有效的通知用户 ID
         if not notify_config.get("wecom_user_id") and not notify_config.get(
-                "telegram_chat_id"
+            "telegram_chat_id"
         ):
             raise ValueError(
                 "Error: Either 'wecom_user_id' or 'telegram_chat_id' must be provided in notify configuration."
@@ -91,7 +104,7 @@ class Config:
                 exchange_rate=website_config.get(
                     "exchange_rate", config_default.EXCHANGE_RATE
                 ),
-                push_price_changes = website_config.get(
+                push_price_changes=website_config.get(
                     "push_price_changes", config_default.PUSH_PRICE_CHANGES
                 ),
                 msg_tpl=website_config.get("msg_tpl", config_default.MESSAGE_TEMPLATE),

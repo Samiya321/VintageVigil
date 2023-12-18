@@ -26,9 +26,11 @@ class WecomClient:
         )
 
     async def get_access_token(self, force_refresh=False):
+        current_time = datetime.now()
         if (
             self.access_token
-            and self.token_expires_at > datetime.now()
+            and self.token_expires_at
+            and self.token_expires_at > current_time
             and not force_refresh
         ):
             return self.access_token

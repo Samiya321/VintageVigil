@@ -38,12 +38,19 @@ class Suruga(BaseScrapy):
             "inStock": get_param("inStock", "Off") if is_url else "Off",
         }
 
+
     async def get_max_pages(self, search) -> int:
         res = await self.get_response(search, 1)
         selector = Selector(res)
         hit_text = selector.css("div.hit").get()
-        hit_number = re.search(r"該当件数:(.+)件中", hit_text).group(1) if hit_text else "0"
-        return await self.extract_number_from_content(hit_number, self.page_size)
+
+        # 使用正则表达式直接从 hit_text 中提取数字
+        match = re.search(r"該当件数:(.+)件中", hit_text) if hit_text else None
+        hit_number = match.group(1) if match else "0"
+
+        # 将字符串转换为数字，计算最大页数
+        max_pages = await self.extract_number_from_content(hit_number, self.page_size)
+        return max_pages or 0
 
     async def get_response_items(self, response):
         selector = Selector(response)
@@ -54,7 +61,8 @@ class Suruga(BaseScrapy):
 
     async def get_item_id(self, item):
         product_link = item.css("p.title a::attr(href)").get()
-        return re.search(r"product/(detail|other)/(\w+)", product_link).group(2)
+        match = re.search(r"product/(detail|other)/(\w+)", product_link)
+        return match.group(2) if match else None
 
     async def get_item_image_url(self, item, id):
         return f"https://www.suruga-ya.jp/database/photo.php?shinaban={id}&size=m"
@@ -97,8 +105,8 @@ class Suruga(BaseScrapy):
             for text in [
                 item.css(
                     "div.item_price div p.mgnB5.mgnT5 span.text-red.fontS15 strong::text"
-                ).get(), # 分店价格
-                item.css("p.price_teika strong::text").get(), # 本店价格
+                ).get(),  # 分店价格
+                item.css("p.price_teika strong::text").get(),  # 本店价格
             ]
             if text
         ]
@@ -133,7 +141,7 @@ class Suruga(BaseScrapy):
             return 1  # 本店及第三方店铺均在售
         elif not official_status and not other_status:
             return 2  # 本店在售 第三方店铺售空
-        elif official_status  and other_status:
+        elif official_status and other_status:
             return 3  # 本店售空 第三方店铺在售
         else:
             return None  # 其他情况
