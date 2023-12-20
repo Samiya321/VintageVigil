@@ -10,7 +10,7 @@ class MercariItems(BaseSearch):
         self.pager_id = ""
 
     async def search(
-        self, search, iteration_count
+        self, search, iteration_count, user_max_pages
     ) -> AsyncGenerator[SearchResultItem, None]:
         self.has_next = True
         self.pager_id = ""

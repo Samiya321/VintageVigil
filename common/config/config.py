@@ -18,8 +18,8 @@ class SearchConfig:
         notify_key = kwargs.get("notify")
         if notify_key:
             kwargs["notify"] = config_default.NOTIFY_MAPPING.get(
-                notify_key, "default_mapped_value" # type: ignore
-            ) 
+                notify_key, "default_mapped_value"  # type: ignore
+            )
         else:
             kwargs["notify"] = "default_mapped_value"
 
@@ -35,12 +35,14 @@ class WebsiteCommon:
         exchange_rate: float,
         push_price_changes,
         msg_tpl: str,
+        user_max_pages: int,
     ):
         self.website_name = website_name
         self.delay = delay
         self.exchange_rate = exchange_rate
         self.push_price_changes = push_price_changes
         self.msg_tpl = msg_tpl
+        self.user_max_pages = user_max_pages
 
 
 class Website:
@@ -65,10 +67,10 @@ class Config:
 
         # 使用默认值进行安全检查
         notify_config["tg_send_type"] = config_default.SEND_TYPE_MAPPING.get(
-            notify_config.get("tg_send_type", ""), config_default.DEFAULT_SEND_TYPE # type: ignore
+            notify_config.get("tg_send_type", ""), config_default.DEFAULT_SEND_TYPE  # type: ignore
         )
         notify_config["we_send_type"] = config_default.SEND_TYPE_MAPPING.get(
-            notify_config.get("we_send_type", ""), config_default.DEFAULT_SEND_TYPE # type: ignore
+            notify_config.get("we_send_type", ""), config_default.DEFAULT_SEND_TYPE  # type: ignore
         )
 
         # 确保至少提供了一个有效的通知用户 ID
@@ -106,6 +108,9 @@ class Config:
                 ),
                 push_price_changes=website_config.get(
                     "push_price_changes", config_default.PUSH_PRICE_CHANGES
+                ),
+                user_max_pages=website_config.get(
+                    "user_max_pages", config_default.USER_DEFAULT_MAX_PAGES
                 ),
                 msg_tpl=website_config.get("msg_tpl", config_default.MESSAGE_TEMPLATE),
             )

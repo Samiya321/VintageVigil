@@ -4,6 +4,7 @@ import asyncio
 from .send_notification import process_item
 from common.utils import extract_keyword_from_url
 
+
 async def process_search_keyword(
     scraper,
     search_query,
@@ -30,7 +31,11 @@ async def process_search_keyword(
                     f"{website_config.website_name} : {extract_keyword_from_url(search_query.keyword)} 开始监控"
                 )
                 products_to_process = await _collect_products(
-                    scraper, search_query, iteration_count, is_running
+                    scraper,
+                    search_query,
+                    iteration_count,
+                    is_running,
+                    website_config.user_max_pages,
                 )
 
                 telegram_tasks = []
@@ -51,7 +56,7 @@ async def process_search_keyword(
                         )
 
                         await _execute_telegram_tasks(telegram_tasks)
-                        
+
                 logger.info(f"--------- End of iteration {iteration_count} ---------\n")
                 iteration_count += 1
                 await asyncio.sleep(website_config.delay)
@@ -59,9 +64,11 @@ async def process_search_keyword(
                 logger.error(f"Error processing search keyword: {e}")
 
 
-async def _collect_products(scraper, search_query, iteration_count, is_running):
+async def _collect_products(
+    scraper, search_query, iteration_count, is_running, user_max_pages
+):
     products = set()
-    async for product in scraper.search(search_query, iteration_count):
+    async for product in scraper.search(search_query, iteration_count, user_max_pages):
         if not is_running:
             break
         products.add(product)

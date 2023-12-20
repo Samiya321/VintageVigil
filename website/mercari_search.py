@@ -11,9 +11,11 @@ class MercariSearch(BaseSearch):
         super().__init__("https://api.mercari.jp/v2/entities:search", client)
 
     async def search(
-        self, search, iteration_count
+        self, search, iteration_count, user_max_pages
     ) -> AsyncGenerator[SearchResultItem, None]:
-        score_page, created_time_page = (100, 100) if iteration_count == 0 else (3, 7)
+        score_page, created_time_page = (
+            (100, 100) if iteration_count == 0 else (3, user_max_pages)
+        )
         tasks = [
             self.search_with_sort(search, "SORT_SCORE", score_page),
             self.search_with_sort(search, "SORT_CREATED_TIME", created_time_page),

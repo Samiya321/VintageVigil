@@ -7,7 +7,7 @@ services:
     network_mode: bridge
     restart: unless-stopped
     volumes:
-      - ./user:/root/VintageVigil/user
+      - /root/VintageVigil/lx:/root/VintageVigil/user/lx
     environment:
       - TELEGRAM_BOT_TOKEN_1=
       - TELEGRAM_BOT_TOKEN_2=

@@ -20,6 +20,8 @@ delay = 1200
 exchange_rate = 0.049
 # 是否开启涨价和降价提醒，可选项，默认值为 true
 push_price_changes = true
+# 检索的最大页数
+user_max_pages = 20
 # 自定义消息模板，可选项，如果为空将使用默认模板
 msg_tpl = """
 【$priceStatus】$productName
@@ -44,6 +46,8 @@ enabled = true
 delay = 1200
 # 汇率，可选项，默认值为 0.049
 exchange_rate = 0.049
+# 检索的最大页数
+user_max_pages = 20
 # 自定义消息模板，可选项，如果为空将使用默认模板
 msg_tpl = """
 【$priceStatus】$productName
@@ -102,6 +106,8 @@ delay = 1200
 exchange_rate = 0.049
 # 是否开启涨价和降价提醒，可选项，默认值为 true
 push_price_changes = true
+# 检索的最大页数
+user_max_pages = 20
 # 自定义消息模板，可选项，如果为空将使用默认模板
 msg_tpl = """
 【$priceStatus】$productName
@@ -124,6 +130,8 @@ delay = 1200
 exchange_rate = 0.049
 # 是否开启涨价和降价提醒，可选项，默认值为 true
 push_price_changes = true
+# 检索的最大页数
+user_max_pages = 20
 # 自定义消息模板，可选项，如果为空将使用默认模板
 msg_tpl = """
 【$priceStatus】$productName
@@ -146,6 +154,8 @@ delay = 1200
 exchange_rate = 0.049
 # 是否开启涨价和降价提醒，可选项，默认值为 true
 push_price_changes = true
+# 检索的最大页数
+user_max_pages = 20
 # 自定义消息模板，可选项，如果为空将使用默认模板
 msg_tpl = """
 【$priceStatus】$productName
@@ -169,6 +179,8 @@ delay = 1200
 exchange_rate = 0.049
 # 是否开启涨价和降价提醒，可选项，默认值为 true
 push_price_changes = true
+# 检索的最大页数
+user_max_pages = 20
 # 自定义消息模板，可选项，如果为空将使用默认模板
 msg_tpl = """
 【$priceStatus】$productName

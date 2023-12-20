@@ -6,7 +6,6 @@ from .common_imports import *
 
 class BaseScrapy(ABC):
     MAX_CONCURRENT_PAGES = 10  # 最大并发页数
-    MAX_PAGES = 30  # 最大处理页数
     MAX_RETRIES = 3  # 最大重试次数
     RETRY_DELAY = 1  # 初始重试延迟（秒）
 
@@ -17,14 +16,14 @@ class BaseScrapy(ABC):
         self.client = client
 
     async def search(
-        self, search_term, iteration_count
+        self, search_term, iteration_count, user_max_pages
     ) -> AsyncGenerator[SearchResultItem, None]:
         # 获取最大页数
         max_pages = await self.get_max_pages(search_term)
 
         # 限制最大页数
         if iteration_count != 0:
-            max_pages = min(max_pages, self.MAX_PAGES)
+            max_pages = min(max_pages, user_max_pages)
 
         if max_pages == 0:
             return  # 直接返回，不执行任何任务
