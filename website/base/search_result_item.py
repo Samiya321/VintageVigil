@@ -10,18 +10,16 @@ class SearchResultItem:
         price: float,
         price_change: int = 0,
         pre_price=None,
-        # extra_data=None,
     ):
         self.site = site
         self.id = id
         self.name = name
-        self.price = float(price) if price else None
+        self.price = float(price) if price else 0
         self.price_change = price_change
         self.pre_price = pre_price
         self.product_url = product_url
         self.image_url = image_url
         self.status = status
-        # self.extra_data = extra_data or {}
 
     def __hash__(self):
         return hash(self.id)
