@@ -11,3 +11,4 @@ ecdsa
 
 loguru
 telebot
+jwt
