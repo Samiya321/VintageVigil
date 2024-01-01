@@ -28,14 +28,13 @@ def setup_logger(websites, user_path):
         log_format = "<green>{time:YYYY-MM-DD HH:mm:ss:SSS}</green> | <level>{level: <8}</level> | <level>{message}</level>"
 
     for website in websites:
-        for index, search in enumerate(website.searches):
-            keyword = search.keyword
+        for index, search in enumerate(website[1:]):
+            keyword = search.get("keyword")
+            website_name = website[0]
             index = int(index) + 1
             logger.add(
-                f"{log_path}/{website.common.website_name}-{index}.log",
-                filter=get_website_keyword_filter(
-                    website.common.website_name, keyword, user_path
-                ),
+                f"{log_path}/{website_name}-{index}.log",
+                filter=get_website_keyword_filter(website_name, keyword, user_path),
                 format=log_format,  # 使用根据DEBUG值选择的日志格式
                 rotation="10 MB",  # 每个日志文件最大10MB
                 retention="24 hours",  # 保留24小时内的日志

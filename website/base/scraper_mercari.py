@@ -133,7 +133,7 @@ class BaseSearch(ABC):
 
         price = await self.get_item_price(item=item)
 
-        site = await self.get_item_site()
+        site = await self.get_item_site(item = item)
 
         status = await self.get_item_status(item=item)
 
@@ -179,7 +179,7 @@ class BaseSearch(ABC):
         return image_url
 
     @abstractmethod
-    async def get_item_site(self) -> str:
+    async def get_item_site(self, item) -> str:
         pass
 
     @abstractmethod

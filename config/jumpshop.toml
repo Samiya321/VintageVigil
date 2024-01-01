@@ -1,0 +1,13 @@
+# JumpShop Online配置
+# 官网: https://jumpshop-online.com
+
+# JumpShop 网站的搜索设置
+[[websites.jumpshop.searches]]
+# 搜索关键字或者链接
+# 必填项,str
+keyword = "呪術廻戦"
+
+# 通知方式
+# 必填项，int
+# @Samiya310Bot（1），@Lihahadear_bot（2），企业微信Samiya（3）
+notify = 1

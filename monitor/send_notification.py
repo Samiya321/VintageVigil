@@ -6,18 +6,17 @@ from common.utils import extract_keyword_from_url, get_price_status_string
 
 async def process_item(
     item,
-    message_template,
-    website_config,
     search_query,
+    message_template,
     notification_clients,
     telegram_tasks,
 ):
-    message = _create_notification_message(item, message_template, website_config)
+    message = _create_notification_message(item, message_template, search_query)
     try:
         logger.info(
-            f"{website_config.website_name}: {extract_keyword_from_url(search_query.keyword)} {item.product_url} {get_price_status_string(item.price_change)}"
+            f"{search_query['website_name']}: {extract_keyword_from_url(search_query['keyword'])} {item.product_url} {get_price_status_string(item.price_change)}"
         )
-        notify_client = notification_clients[search_query.notify]
+        notify_client = notification_clients[search_query["notify"]]
         if notify_client.client_type == "telegram":
             task = _send_notification(notify_client, message, item)
             telegram_tasks.append(task)
@@ -30,13 +29,9 @@ async def process_item(
         logger.error(f"Error preparing notification: {e}")
 
 
-def _create_notification_message(item, message_template, website_config):
-    price_currency = item.price * website_config.exchange_rate
-    price = (
-        f"{item.pre_price} 円 ==> {item.price}"
-        if item.pre_price
-        else item.price
-    )
+def _create_notification_message(item, message_template, search_query):
+    price_currency = item.price * search_query["exchange_rate"]
+    price = f"{item.pre_price} 円 ==> {item.price}" if item.pre_price else item.price
     return message_template.substitute(
         priceStatus=get_price_status_string(item.price_change),
         productName=item.name,

@@ -18,10 +18,10 @@ class JumpShop(BaseScrapy):
         )
 
     async def create_search_params(self, search, page: int) -> dict:
-        is_url_search = "https" in search.keyword
+        is_url_search = "https" in search["keyword"]
         get_param = (
             (
-                lambda param, default="": self.get_param_value(search.keyword, param)
+                lambda param, default="": self.get_param_value(search["keyword"], param)
                 or default
             )
             if is_url_search
@@ -29,9 +29,9 @@ class JumpShop(BaseScrapy):
         )
 
         return {
-            "q": get_param("q") if is_url_search else search.keyword,
+            "q": get_param("q") if is_url_search else search["keyword"],
             "page": page,
-            "options[prefix]": get_param("options[prefix]", "last"),
+            "options[prefix]": "last",
         }
 
     async def get_max_pages(self, search) -> int:
@@ -65,7 +65,7 @@ class JumpShop(BaseScrapy):
         product_link = item.css("a.full-unstyled-link::attr(href)").get()
         return f"https://jumpshop-online.com{product_link}" if product_link else None
 
-    async def get_item_site(self):
+    async def get_item_site(self, item):
         return "jumpshop"
 
     async def get_item_status(self, item):

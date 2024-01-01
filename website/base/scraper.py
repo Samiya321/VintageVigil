@@ -5,7 +5,6 @@ from .common_imports import *
 
 
 class BaseScrapy(ABC):
-    MAX_CONCURRENT_PAGES = 10  # 最大并发页数
     MAX_RETRIES = 3  # 最大重试次数
     RETRY_DELAY = 1  # 初始重试延迟（秒）
 
@@ -30,7 +29,7 @@ class BaseScrapy(ABC):
 
         # 限制并发页数
         # 确保并发数不超过 MAX_CONCURRENT_PAGES 或 max_pages
-        concurrent_pages = min(self.MAX_CONCURRENT_PAGES, max_pages)
+        concurrent_pages = min(search_term["max_concurrency"], max_pages)
 
         # 使用 semaphore 来限制并发数
         semaphore = asyncio.Semaphore(concurrent_pages)
@@ -145,7 +144,7 @@ class BaseScrapy(ABC):
 
         price = await self.get_item_price(item=item)
 
-        site = await self.get_item_site()
+        site = await self.get_item_site(item=item)
 
         status = await self.get_item_status(item=item)
 
@@ -224,7 +223,7 @@ class BaseScrapy(ABC):
         pass
 
     @abstractmethod
-    async def get_item_site(self) -> str:
+    async def get_item_site(self, item) -> str:
         pass
 
     @abstractmethod

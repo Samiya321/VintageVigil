@@ -18,12 +18,12 @@ def fetch_scraper(website_name, httpx_client):
     scrapers = {
         "jumpshop": JumpShop,
         "lashinbang": Lashinbang,
-        "mercapi": MercariMercapi,
         "mercari": MercariSearch,
         "mercari_user": MercariItems,
         "paypay": Paypay,
         "fril": Fril,
         "suruga": Suruga,
+        "rennigou": Rennigou,
     }
     scraper_class = scrapers.get(website_name)
     if scraper_class:

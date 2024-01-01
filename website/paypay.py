@@ -14,15 +14,15 @@ class Paypay(BaseScrapy):
 
     async def create_search_params(self, search, page: int) -> dict:
         return {
-            "query": search.keyword,
+            "query": search["keyword"],
             "results": self.page_size,
             "offset": (page - 1) * self.page_size,
-            "imageShape": getattr(search, "imageShape", "square"),
-            "sort": getattr(search, "sort", "ranking"),
-            "order": getattr(search, "order", "DESC"),
-            "webp": getattr(search, "webp", "false"),
-            "module": getattr(search, "module", "catalog:hit:21"),
-            "itemStatus": getattr(search, "itemStatus", "open"),
+            "imageShape": getattr(search["filter"], "imageShape", "square"),
+            "sort": getattr(search["filter"], "sort", "ranking"),
+            "order": getattr(search["filter"], "order", "DESC"),
+            "webp": getattr(search["filter"], "webp", "false"),
+            "module": getattr(search["filter"], "module", "catalog:hit:21"),
+            "itemStatus": getattr(search["filter"], "itemStatus", "open"),
         }
 
     async def get_max_pages(self, search) -> int:
@@ -49,7 +49,7 @@ class Paypay(BaseScrapy):
     async def get_item_product_url(self, item, id):
         return f"https://paypayfleamarket.yahoo.co.jp/item/{id}"
 
-    async def get_item_site(self):
+    async def get_item_site(self, item):
         return "paypay"
 
     async def get_item_status(self, item):

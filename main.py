@@ -94,6 +94,7 @@ class MonitoringController:
                 )
             )
             for user_dir in user_directories
+            if os.path.exists(f"{user_dir}/notify.toml")
         ]
         await asyncio.gather(*monitor_tasks, return_exceptions=True)
 

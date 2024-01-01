@@ -11,11 +11,8 @@ async def _load_user_configuration(user_dir, httpx_client, telegram_bots):
     Load the configuration for a user and initialize required components.
     """
     try:
-        if os.path.exists(f"{user_dir}/config.toml"):
-            initialize = InitializationManager(httpx_client, telegram_bots)
-            return await initialize.setup_monitoring_for_user(user_dir)
-        else:
-            return None, None, None
+        initialize = InitializationManager(httpx_client, telegram_bots)
+        return await initialize.setup_monitoring_for_user(user_dir)
     except Exception as e:
         logger.error(f"Error loading configuration for {user_dir}: {e}")
         return None, None, None
@@ -34,14 +31,14 @@ async def setup_and_monitor(user_dir, is_running, httpx_client, telegram_bots):
         try:
             website_tasks = [
                 monitor_site(
-                    site,
+                    website,
                     database,
                     notification_clients,
                     user_dir,
                     is_running,
                     httpx_client,
                 )
-                for site in config.websites
+                for website in config.websites
             ]
             await asyncio.gather(*website_tasks, return_exceptions=True)
         except Exception as e:

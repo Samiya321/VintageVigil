@@ -1,0 +1,20 @@
+# Paypay（雅虎日本）配置
+# 官网: https://paypayfleamarket.yahoo.co.jp
+
+# Paypay 网站的搜索设置
+[[websites.paypay.searches]]
+# 搜索关键字，必填项
+keyword = "呪術廻戦"
+
+# 通知方式
+# 必填项
+# @Samiya310Bot（1），@Lihahadear_bot（2），企业微信Samiya（3）
+notify = 1
+
+[websites.paypay.searches.filter]
+sort = ""
+order = ""
+imageShape = ""
+webp = ""
+module = ""
+itemStatus = ""

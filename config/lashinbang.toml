@@ -1,0 +1,17 @@
+# 指南针 配置
+# 官网: https://shop.lashinbang.com
+
+# Lashibang 网站的搜索设置
+[[websites.lashinbang.searches]]
+# 搜索关键字
+# 必填项，str
+keyword = "呪術廻戦"
+
+# 通知方式
+# 必填项，int
+# @Samiya310Bot（1），@Lihahadear_bot（2），企业微信Samiya（3）
+notify = 1
+
+[websites.lashinbang.searches.filter]
+# 排序顺序，可选项，默认最新上架
+sort = ""

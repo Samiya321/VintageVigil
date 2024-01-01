@@ -1,5 +1,5 @@
-# 使用官方 Python 3.11 镜像
-FROM python:3.11
+# 使用官方 Python 3.10 镜像
+FROM python:3.10
 
 # 设置时区为东八区
 ENV TZ=Asia/Shanghai
@@ -15,5 +15,12 @@ COPY . .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # 设置容器启动时执行的命令
-# CMD ["bash", "./run_checker.sh"]
-CMD ["sh", "-c", "python ./main.py > /dev/null 2>&1"]
+
+# 自动监控
+# CMD ["bash", "./run_checker.sh"] 
+
+# 在控制台不输出日志
+# CMD ["sh", "-c", "python ./main.py > /dev/null 2>&1"] 
+
+# 在控制台输出日志
+CMD ["python", "./main.py"] 

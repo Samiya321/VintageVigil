@@ -27,7 +27,7 @@ class Fril(BaseScrapy):
         if "https" in search.keyword:
             for param in ["query", "transaction", "sort", "order"]:
                 # 从 URL 提取参数值，如果未找到，则使用默认值
-                param_value = self.get_param_value(search.keyword, param)
+                param_value = self.get_param_value(search['keyword'], param)
                 if param_value:
                     params[param] = param_value
 
@@ -79,7 +79,7 @@ class Fril(BaseScrapy):
     async def get_item_product_url(self, item: Selector, id: str):
         return item.css(".item-box__image-wrapper a::attr(href)").get()
 
-    async def get_item_site(self):
+    async def get_item_site(self, item):
         return "fril"
 
     async def get_item_status(self, item):

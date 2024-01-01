@@ -3,6 +3,7 @@ from loguru import logger
 
 from common import Config, ProductDatabase, TelegramClient, setup_logger, WecomClient
 
+
 class InitializationManager:
     def __init__(self, httpx_client, telegram_bots):
         self.httpx_client = httpx_client
@@ -51,16 +52,14 @@ class InitializationManager:
 
     async def setup_monitoring_for_user(self, user_dir):
         try:
-            config_path = f"{user_dir}/config.toml"
-            database_path = f"{user_dir}/database.db"
-
             # Load configuration
-            config = Config.from_toml(config_path)
+            config = Config.from_toml(user_dir)
 
             # Setup logger
             setup_logger(config.websites, user_dir)
 
             # Setup database
+            database_path = f"{user_dir}/data/database.db"
             database = ProductDatabase(database_path)
 
             # Initialize notification clients

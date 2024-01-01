@@ -36,10 +36,10 @@ class MercariItems(BaseSearch):
 
     def create_params(self, search):
         params = {
-            "seller_id": search.keyword,
+            "seller_id": search["keyword"],
             "limit": 150,
             # "status": "on_sale,trading,sold_out",
-            "status": getattr(search, "status", "on_sale, trading"),
+            "status": getattr(search["filter"], "status", "on_sale, trading"),
         }
         # 仅当 self.pager_id 非空时才添加 max_pager_id 参数
         if self.pager_id:
@@ -47,7 +47,7 @@ class MercariItems(BaseSearch):
 
         return params
 
-    async def get_item_site(self):
+    async def get_item_site(self, item):
         return "mercari_user"
 
     async def get_item_status(self, item):

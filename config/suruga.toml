@@ -1,0 +1,12 @@
+# Suruga-Ya（骏河屋）配置
+# 官网: https://www.suruga-ya.jp/
+
+# Suruga-ya 网站的搜索设置
+[[websites.suruga.searches]]
+# 搜索关键字或者链接，必填项
+keyword = "呪術廻戦"
+
+# 通知方式
+# 必填项
+# @Samiya310Bot（1），@Lihahadear_bot（2），企业微信Samiya（3）
+notify = 1

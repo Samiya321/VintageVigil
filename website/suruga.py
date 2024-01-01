@@ -16,10 +16,10 @@ class Suruga(BaseScrapy):
 
     async def create_search_params(self, search, page: int) -> dict:
         # 判断搜索关键字是否为URL
-        is_url = "https" in search.keyword
+        is_url = "https" in search['keyword']
         get_param = (
             (
-                lambda param, default="": self.get_param_value(search.keyword, param)
+                lambda param, default="": self.get_param_value(search['keyword'], param)
                 or default
             )
             if is_url
@@ -27,17 +27,16 @@ class Suruga(BaseScrapy):
         )
 
         return {
-            "category": get_param("category") if is_url else "",
-            "search_word": get_param("search_word") if is_url else search.keyword,
+            "category": get_param("category") if is_url else "",  # カテゴリー
+            "search_word": get_param("search_word") if is_url else search['keyword'],
             "rankBy": get_param("rankBy", "modificationTime:descending")
             if is_url
-            else "modificationTime:descending",
-            "hendou": get_param("hendou") if is_url else "",
+            else "modificationTime:descending",  # 並べ替え
+            "hendou": get_param("hendou") if is_url else "",  # 変動
             "page": page,
-            "adult_s": get_param("adult_s", 1) if is_url else 1,
-            "inStock": get_param("inStock", "Off") if is_url else "Off",
+            "adult_s": get_param("adult_s", 1) if is_url else 1,  # セーフサーチ
+            "inStock": get_param("inStock", "Off") if is_url else "Off",  # 品切れ
         }
-
 
     async def get_max_pages(self, search) -> int:
         res = await self.get_response(search, 1)
@@ -113,7 +112,7 @@ class Suruga(BaseScrapy):
 
         return min(prices, default=0) if prices else 0
 
-    async def get_item_site(self):
+    async def get_item_site(self, item):
         return "suruga"
 
     async def get_item_status(self, item):

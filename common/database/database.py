@@ -1,9 +1,11 @@
 import sqlite3
+import os
 from typing import Tuple, Optional
 
 from loguru import logger
 
 from ..utils import extract_keyword_from_url
+
 
 class ProductDatabase:
     # SQL 语句集中管理
@@ -80,6 +82,9 @@ class ProductDatabase:
 
         :param db_name: 数据库的文件名。
         """
+        db_dir = os.path.dirname(db_name)
+        if not os.path.exists(db_dir):
+            os.makedirs(db_dir)
         self.db_name = db_name
         self.conn = sqlite3.connect(self.db_name, check_same_thread=False)
         self.setup_database()
@@ -142,7 +147,6 @@ class ProductDatabase:
         :param keyword_id: 关键词 ID。
         """
         self._safe_execute("update_product_count", (keyword_id, keyword_id, keyword_id))
-
 
     def upsert_products(
         self, items, keyword: str, website: str, push_price_changes: bool

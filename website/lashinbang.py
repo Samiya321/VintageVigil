@@ -10,10 +10,10 @@ class Lashinbang(BaseScrapy):
 
     async def create_search_params(self, search, page: int) -> dict:
         return {
-            "q": search.keyword,
+            "q": search["keyword"],
             "s6o": 1,
             "pl": 1,
-            "sort": getattr(search, "sort", "Number18%2CScore"),
+            "sort": getattr(search["filter"], "sort", "Number18%2CScore"),
             "limit": self.page_size,
             "o": (page - 1) * self.page_size,  # Offset calculation for pagination
             "n6l": 1,
@@ -57,7 +57,7 @@ class Lashinbang(BaseScrapy):
     async def get_item_product_url(self, item, id):
         return item.get("url")
 
-    async def get_item_site(self):
+    async def get_item_site(self, item):
         return "lashinbang"
 
     async def get_item_status(self, item):

@@ -1,0 +1,18 @@
+# 煤炉卖家主页 配置
+# https://jp.mercari.com/user/profile/{id}
+
+
+# 煤炉用户ID 的搜索配置
+[[websites.mercari_user.searches]]
+# 煤炉用户主页ID
+# 必填项, str
+keyword = '110551852'
+
+# 通知方式
+# 必填项，int
+# @Samiya310Bot（1），@Lihahadear_bot（2），企业微信Samiya（3）
+notify = 1
+
+[websites.mercari_user.searches.filter]
+# 商品状态，可选项，默认为on_sale和trading
+status = ""

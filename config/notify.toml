@@ -1,0 +1,50 @@
+# 消息推送配置文件
+
+[notify]
+# 用户名称,用于区分不同配置文件
+# 可选项，默认为 "Default User"
+user = "Default User"
+
+# Telegram 设置
+# Telegram用户ID，与企业微信用户ID至少需要一个
+# 可通过给 https://t.me/username_to_id_bot 发一条消息来获取
+telegram_chat_id = ""
+# Telegram 消息发送类型
+# 可选项：1代表纯文本，2代表文字+图片分开发送，3代表图文一起发送，默认为3
+tg_send_type = ""
+
+# 企业微信设置
+# 企业微信用户ID，与Telegram聊天ID至少需要一个
+wecom_user_id = ""
+# 企业微信消息发送类型
+# 可选项：1代表纯文本，2代表文字+图片分开发送，3代表图文一起发送，默认为3
+we_send_type = ""
+
+[common]
+# 监控间隔时间（单位：秒）
+# 可选项，默认值为 1200秒（20分钟）
+delay = 1200
+
+# 是否开启价格变动（涨价/降价）提醒
+# 可选项，默认值为 true
+push_price_changes = true
+
+# 搜索时检索的最大页数
+# 可选项，默认值为 20
+user_max_pages = 20
+
+# 用于价格转换的汇率（日元到人民币）
+# 可选项，默认值为 0.049
+exchange_rate = 0.049
+
+# 每个搜索任务的最大并发数
+# 可选项，默认值为10
+max_concurrency = 10
+
+# 自定义消息推送模板
+# 可选项，有默认模板
+msg_tpl = """
+【$priceStatus】$productName
+【链接】$productURL
+【价格】$price 円 == $priceCurrency 元
+"""

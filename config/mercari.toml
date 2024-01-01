@@ -1,0 +1,27 @@
+# Mercari（煤炉）配置
+# 官网: https://jp.mercari.com
+
+# 煤炉 网站的搜索设置
+[[websites.mercari.searches]]
+# 搜索关键字
+# 必填项, str
+keyword = "呪術廻戦"
+
+# 通知方式
+# 必填项,int
+# @Samiya310Bot（1），@Lihahadear_bot（2），企业微信Samiya（3）
+notify = 1
+
+[websites.mercari.searches.filter]
+# 排除关键词，可选项
+exclude_keyword = ""
+# 商品状态，可选项，默认为on_sale和trading
+status = ""
+# 最低价格，可选项
+price_min = ""
+# 最高价格，可选项
+price_max = ""
+# 品类，可选项
+category = ""
+# 品牌，可选项
+brandId = ""
