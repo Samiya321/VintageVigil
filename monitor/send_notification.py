@@ -32,12 +32,15 @@ async def process_item(
 def _create_notification_message(item, message_template, search_query):
     price_currency = item.price * search_query["exchange_rate"]
     price = f"{item.pre_price} 円 ==> {item.price}" if item.pre_price else item.price
-    return message_template.substitute(
-        priceStatus=get_price_status_string(item.price_change),
+    return message_template.safe_substitute(
+        id = item.id,
+        imageURL = item.image_url,
         productName=item.name,
-        productURL=item.product_url,
         price=price,
-        priceCurrency=f"{price_currency:.2f}",
+        priceStatus=get_price_status_string(item.price_change),
+        priceCurrency=f"{price_currency:.2f}",     
+        productURL=item.product_url,
+        site = item.site
     )
 
 

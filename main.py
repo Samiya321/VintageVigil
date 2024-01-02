@@ -84,7 +84,7 @@ class MonitoringController:
         and setting up and monitoring user directories asynchronously.
         """
         logger.info("Starting VintageVigil...")
-        await self.initialize_resources()
+        await self.initialize_resources(parse_mode= 'Markdown')
         user_directories = self.fetch_user_directories("user")
 
         monitor_tasks = [
