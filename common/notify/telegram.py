@@ -1,10 +1,9 @@
 from loguru import logger
 from telebot import asyncio_helper
-from httpx import AsyncClient
 
 
 class TelegramClient:
-    def __init__(self, bot, chat_id: str, httpx_client, send_type="news"):
+    def __init__(self, bot, chat_ids: dict, httpx_client, send_type="news"):
         """
         初始化 Telegram 客户端。
 
@@ -12,10 +11,10 @@ class TelegramClient:
         :param chat_id: 要发送消息的聊天 ID。
         :param send_type: 消息发送类型（text, photo, news）。
         """
-        if not chat_id:
-            raise ValueError("chat_id 不能为空")
+        if not chat_ids:
+            raise ValueError("chat_ids 不能为空")
         self.bot = bot
-        self.chat_id = chat_id
+        self.chat_ids = chat_ids
         self.send_type = send_type
         self.client = httpx_client
         self.client_type = "telegram"
@@ -24,12 +23,14 @@ class TelegramClient:
         """
         初始化 Telegram 客户端，并发送一条初始化成功的消息。
         """
-        await self.send_message(
-            photo_url="https://static.mercdn.net/c!/w=360,f=webp/item/detail/orig/photos/m79600701178_1.jpg",
-            message="TelegramClient 实例化成功。",
-        )
+        for index, chat_id in enumerate(self.chat_ids):
+            await self.send_message(
+                photo_url="https://static.mercdn.net/c!/w=360,f=webp/item/detail/orig/photos/m79600701178_1.jpg",
+                message="TelegramClient 实例化成功。",
+                chat_ids_index=index,
+            )
 
-    async def send_text(self, message: str):
+    async def send_text(self, message: str, chat_id):
         """
         向 Telegram 发送文本消息。
 
@@ -38,14 +39,14 @@ class TelegramClient:
         max_retries = 3
         for attempt in range(max_retries):
             try:
-                await self.bot.send_message(self.chat_id, message)
+                await self.bot.send_message(chat_id, message)
                 return  # 成功发送
             except Exception as e:
                 logger.error(
                     f"Attempt {attempt + 1}: Unexpected error during sending text: {e}"
                 )
 
-    async def send_photo(self, photo_url: str):
+    async def send_photo(self, photo_url: str, chat_id):
         """
         向 Telegram 发送图片消息。
 
@@ -53,10 +54,10 @@ class TelegramClient:
         """
         await self.try_send_photo_with_retries(
             photo_url,
-            lambda url: self.bot.send_photo(self.chat_id, photo=url),
+            lambda url: self.bot.send_photo(chat_id, photo=url),
         )
 
-    async def send_news(self, message: str, photo_url: str):
+    async def send_news(self, message: str, photo_url: str, chat_id):
         """
         向 Telegram 发送图文消息。
 
@@ -65,7 +66,7 @@ class TelegramClient:
         """
         await self.try_send_photo_with_retries(
             photo_url,
-            lambda url: self.bot.send_photo(self.chat_id, photo=url, caption=message),
+            lambda url: self.bot.send_photo(chat_id, photo=url, caption=message),
         )
 
     async def try_send_photo_with_retries(self, photo_url, send_func):
@@ -110,21 +111,22 @@ class TelegramClient:
                 f"Error during sending original photo: {e}, photo_url: {photo_url}"
             )
 
-    async def send_message(self, message: str, photo_url=""):
+    async def send_message(self, message: str, photo_url="", chat_ids_index=0):
         """
         根据设定的发送类型发送消息。
 
         :param message: 要发送的消息文本。
         :param photo_url: 可选，要发送的图片 URL。
         """
+        chat_id = self.chat_ids[chat_ids_index]
         try:
             if self.send_type == "text":
-                await self.send_text(message)
+                await self.send_text(message, chat_id)
             elif self.send_type == "photo":
-                await self.send_text(message)
-                await self.send_photo(photo_url)
+                await self.send_text(message, chat_id)
+                await self.send_photo(photo_url, chat_id)
             elif self.send_type == "news":
-                await self.send_news(message, photo_url)
+                await self.send_news(message, photo_url, chat_id)
             else:
                 logger.warning(f"未知的发送类型: {self.send_type}")
         except asyncio_helper.RequestTimeout:

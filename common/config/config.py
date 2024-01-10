@@ -21,11 +21,11 @@ class Config:
             )
 
         # 确保至少提供了一个有效的通知用户ID
-        if not any(
-            self.notify_config.get(key) for key in ["wecom_user_id", "telegram_chat_id"]
-        ):
+        tg_chat_ids = self.notify_config.get("telegram_chat_ids", [])
+        wecom_user_ids = self.notify_config.get("wecom_user_ids", [])
+        if not (tg_chat_ids or wecom_user_ids):
             raise ValueError(
-                "Error: Either 'wecom_user_id' or 'telegram_chat_id' must be provided in notify configuration."
+                "Error: At least one of 'wecom_user_ids' or 'telegram_chat_ids' must be provided in notify configuration."
             )
 
     @staticmethod
@@ -82,8 +82,8 @@ class Config:
             )
 
         # 这里假设 NOTIFY_MAPPING 是一个预定义的字典
-        search_config["notify"] = config_default.NOTIFY_MAPPING.get(
-            search_config.get("notify"), "default_mapped_value"
+        search_config["notify"][0] = config_default.NOTIFY_MAPPING.get(
+            search_config.get("notify")[0], "default_mapped_value"
         )
         return search_config
 

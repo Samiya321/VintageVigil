@@ -22,19 +22,19 @@ class InitializationManager:
             raise e
 
     async def _setup_telegram_clients(self, notification_config, notification_clients):
-        if "telegram_chat_id" in notification_config:
+        if "telegram_chat_ids" in notification_config:
             for index, bot in enumerate(self.telegram_bots.values()):
                 client_key = f"telegram_{index + 1}"
                 notification_clients[client_key] = TelegramClient(
                     bot,
-                    notification_config["telegram_chat_id"],
+                    notification_config["telegram_chat_ids"],
                     self.httpx_client,
                     notification_config["tg_send_type"],
                 )
                 await notification_clients[client_key].initialize()
 
     async def _setup_wecom_clients(self, notification_config, notification_clients):
-        if "wecom_user_id" in notification_config:
+        if "wecom_user_ids" in notification_config:
             wecom_agent_ids = [os.getenv("WECOM_AGENT_ID_1")]
             corp_id = os.getenv("WECOM_CORP_ID")
             corp_secret = os.getenv("WECOM_CORP_SECRET")
@@ -44,7 +44,7 @@ class InitializationManager:
                     corp_id,
                     corp_secret,
                     agent_id,
-                    notification_config["wecom_user_id"],
+                    notification_config["wecom_user_ids"],
                     self.httpx_client,
                     notification_config["we_send_type"],
                 )

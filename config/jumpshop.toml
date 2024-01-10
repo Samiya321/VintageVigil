@@ -8,6 +8,8 @@
 keyword = "呪術廻戦"
 
 # 通知方式
-# 必填项，int
-# @Samiya310Bot（1），@Lihahadear_bot（2），企业微信Samiya（3）
-notify = 1
+# from * to *
+# 必填项
+# 第一项 @Samiya310Bot（1），@Lihahadear_bot（2），企业微信Samiya（3）
+# 第二项 根据notify中填的ids定
+notify = [1,2]

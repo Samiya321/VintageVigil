@@ -6,12 +6,12 @@ from loguru import logger
 
 class WecomClient:
     def __init__(
-        self, corp_id, corp_secret, agent_id, user_id, httpx_client, send_type="news"
+        self, corp_id, corp_secret, agent_id, user_ids, httpx_client, send_type="news"
     ):
         self.corp_id = corp_id
         self.corp_secret = corp_secret
         self.agent_id = agent_id
-        self.user_id = user_id
+        self.user_ids = user_ids
         self.access_token = None
         self.token_expires_at = None
         self.send_type = send_type
@@ -19,11 +19,13 @@ class WecomClient:
         self.client_type = "wecom"
 
     async def initialize(self):
-        await self.send_message(
-            title="WeCom 实例化成功",
-            photo_url="https://static.mercdn.net/c!/w=360,f=webp/item/detail/orig/photos/m79600701178_1.jpg",
-            message="WeCom 实例化成功。",
-        )
+        for index, chat_id in enumerate(self.user_ids):
+            await self.send_message(
+                title="WeCom 实例化成功",
+                photo_url="https://static.mercdn.net/c!/w=360,f=webp/item/detail/orig/photos/m79600701178_1.jpg",
+                message="WeCom 实例化成功。",
+                chat_ids_index=index,
+            )
 
     async def get_access_token(self, force_refresh=False):
         current_time = datetime.now()
@@ -78,21 +80,21 @@ class WecomClient:
             logger.error(f"消息发送失败: {e}")
             return {"error": "Failed to send message"}
 
-    async def send_text(self, message: str):
+    async def send_text(self, message: str, chat_id):
         access_token = await self.get_access_token()
         if not access_token:
             return {"error": "Failed to get access token"}
 
         url = f"https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token={access_token}"
         payload = {
-            "touser": self.user_id,
+            "touser": chat_id,
             "msgtype": "text",
             "agentid": self.agent_id,
             "text": {"content": message},
         }
         return await self._send_wechat_message(url, payload)
 
-    async def send_photo(self, photo_url: str):
+    async def send_photo(self, photo_url: str, chat_id):
         media_id = await self.upload_image_get_media_id(photo_url)
         if not media_id:
             return {"error": "Failed to upload image"}
@@ -103,7 +105,7 @@ class WecomClient:
 
         url = f"https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token={access_token}"
         payload = {
-            "touser": self.user_id,
+            "touser": chat_id,
             "msgtype": "image",
             "agentid": self.agent_id,
             "image": {"media_id": media_id},
@@ -111,7 +113,7 @@ class WecomClient:
         return await self._send_wechat_message(url, payload)
 
     async def send_news(
-        self, message: str, photo_url: str, message_url: str, title: str
+        self, message: str, photo_url: str, message_url: str, title: str, chat_id
     ):
         access_token = await self.get_access_token()
         if not access_token:
@@ -119,7 +121,7 @@ class WecomClient:
 
         url = f"https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token={access_token}"
         payload = {
-            "touser": self.user_id,
+            "touser": chat_id,
             "msgtype": "news",
             "agentid": self.agent_id,
             "news": {
@@ -136,16 +138,22 @@ class WecomClient:
         return await self._send_wechat_message(url, payload)
 
     async def send_message(
-        self, message: str, photo_url: str = "", message_url="", title=""
+        self,
+        message: str,
+        photo_url: str = "",
+        message_url="",
+        title="",
+        chat_ids_index=0,
     ):
+        chat_id = self.user_ids[chat_ids_index]
         if self.send_type == "text":
-            return await self.send_text(message)
+            return await self.send_text(message, chat_id)
         elif self.send_type == "photo" and photo_url:
-            await self.send_photo(photo_url)
-            await self.send_text(message)
+            await self.send_photo(photo_url, chat_id)
+            await self.send_text(message, chat_id)
             return
         elif self.send_type == "news":
-            return await self.send_news(message, photo_url, message_url, title)
+            return await self.send_news(message, photo_url, message_url, title, chat_id)
         else:
             logger.warning(f"未知的发送类型: {self.send_type}")
             return {"error": "Unknown send type"}

@@ -8,17 +8,17 @@ user = "Default User"
 # Telegram 设置
 # Telegram用户ID，与企业微信用户ID至少需要一个
 # 可通过给 https://t.me/username_to_id_bot 发一条消息来获取
-telegram_chat_id = ""
+telegram_chat_ids = [123456,789123]
 # Telegram 消息发送类型
 # 可选项：1代表纯文本，2代表文字+图片分开发送，3代表图文一起发送，默认为3
-tg_send_type = ""
+tg_send_type = 3
 
 # 企业微信设置
 # 企业微信用户ID，与Telegram聊天ID至少需要一个
-wecom_user_id = ""
+wecom_user_ids = ['LongXiang','LiYanTong']
 # 企业微信消息发送类型
 # 可选项：1代表纯文本，2代表文字+图片分开发送，3代表图文一起发送，默认为3
-we_send_type = ""
+we_send_type = 3
 
 [common]
 # 监控间隔时间（单位：秒）
@@ -43,6 +43,16 @@ max_concurrency = 10
 
 # 自定义消息推送模板
 # 可选项，有默认模板
+# 可用参数
+# id 商品ID
+# imageURL 商品图片链接
+# productName 商品名
+# price 商品价格 日元
+# priceStatus 商品状态
+# priceCurrency 商品价格 人民币
+# productURL 商品链接
+# site 商品所属平台
+# keyword 搜索关键词
 msg_tpl = """
 【$priceStatus】$productName
 【链接】$productURL
