@@ -22,7 +22,7 @@ class WecomClient:
         for index, chat_id in enumerate(self.user_ids):
             await self.send_message(
                 title="WeCom 实例化成功",
-                photo_url="https://static.mercdn.net/c!/w=360,f=webp/item/detail/orig/photos/m79600701178_1.jpg",
+                photo_url="https://repo.samiya.workers.dev/Samiya321/VintageVigil/main/favicon.ico",
                 message="WeCom 实例化成功。",
                 chat_ids_index=index,
             )

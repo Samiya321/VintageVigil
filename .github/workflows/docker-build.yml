@@ -4,8 +4,14 @@ on:
   release:
     types: [published]
   watch:
-    types: [started]  # 当仓库被star时触发
-    
+    types: [started]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Docker 标签'
+        required: false
+        default: 'latest'
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
@@ -29,6 +35,6 @@ jobs:
         file: ./Dockerfile
         push: true
         tags: |
-          samiya777/vintagevigil:${{ github.event.release.tag_name }}
+          samiya777/vintagevigil:${{ github.event_name == 'release' && github.event.release.tag_name || github.event.inputs.tag }}
           samiya777/vintagevigil:latest
         platforms: linux/amd64,linux/arm64

@@ -25,7 +25,7 @@ class TelegramClient:
         """
         for index, chat_id in enumerate(self.chat_ids):
             await self.send_message(
-                photo_url="https://static.mercdn.net/c!/w=360,f=webp/item/detail/orig/photos/m79600701178_1.jpg",
+                photo_url="https://repo.samiya.workers.dev/Samiya321/VintageVigil/main/favicon.ico",
                 message="TelegramClient 实例化成功。",
                 chat_ids_index=index,
             )
