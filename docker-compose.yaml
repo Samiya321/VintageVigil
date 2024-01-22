@@ -1,0 +1,16 @@
+version: '3.8'
+services:
+  VintageVigil:
+    image: samiya777/vintagevigil:latest
+    container_name: vintagevigil
+    network_mode: bridge
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "3"    
+    volumes:
+      - /root/VintageUser/.env:/root/VintageVigil/.env # 环境变量
+      - /root/VintageUser/lx:/root/VintageVigil/user/lx # 配置文件
+      
