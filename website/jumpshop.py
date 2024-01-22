@@ -15,6 +15,7 @@ class JumpShop(BaseScrapy):
             page_size=20,
             headers=headers,
             client=client,
+            method="GET",
         )
 
     async def create_search_params(self, search, page: int) -> dict:

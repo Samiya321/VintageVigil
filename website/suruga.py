@@ -7,7 +7,10 @@ from .base.scraper import BaseScrapy
 class Suruga(BaseScrapy):
     def __init__(self, client):
         super().__init__(
-            base_url="https://www.suruga-ya.jp/search", page_size=24, client=client
+            base_url="http://www.suruga-ya.jp/search",
+            page_size=24,
+            client=client,
+            method="GET",
         )
 
     async def create_request_url(self, params):
@@ -16,10 +19,10 @@ class Suruga(BaseScrapy):
 
     async def create_search_params(self, search, page: int) -> dict:
         # 判断搜索关键字是否为URL
-        is_url = "https" in search['keyword']
+        is_url = "https" in search["keyword"]
         get_param = (
             (
-                lambda param, default="": self.get_param_value(search['keyword'], param)
+                lambda param, default="": self.get_param_value(search["keyword"], param)
                 or default
             )
             if is_url
@@ -28,7 +31,7 @@ class Suruga(BaseScrapy):
 
         return {
             "category": get_param("category") if is_url else "",  # カテゴリー
-            "search_word": get_param("search_word") if is_url else search['keyword'],
+            "search_word": get_param("search_word") if is_url else search["keyword"],
             "rankBy": get_param("rankBy", "modificationTime:descending")
             if is_url
             else "modificationTime:descending",  # 並べ替え

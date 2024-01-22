@@ -5,7 +5,10 @@ from .base.scraper import BaseScrapy
 class Lashinbang(BaseScrapy):
     def __init__(self, client):
         super().__init__(
-            base_url="https://lashinbang-f-s.snva.jp", page_size=100, client=client
+            base_url="http://lashinbang-f-s.snva.jp",
+            page_size=100,
+            client=client,
+            method="GET",
         )
 
     async def create_search_params(self, search, page: int) -> dict:

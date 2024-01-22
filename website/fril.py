@@ -12,22 +12,26 @@ class Fril(BaseScrapy):
             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36 Edg/118.0.2088.76",
         }
         super().__init__(
-            base_url="https://fril.jp/s", page_size=36, headers=headers, client=client
+            base_url="http://fril.jp/s",
+            page_size=36,
+            headers=headers,
+            client=client,
+            method="GET",
         )
 
     async def create_search_params(self, search, page: int) -> dict:
         params = {
-            "query": search.keyword if "https" not in search.keyword else "",
+            "query": search["keyword"] if "https" not in search["keyword"] else "",
             "transaction": "selling",
             "sort": "created_at",
             "page": page,
             "order": "desc",
         }
 
-        if "https" in search.keyword:
+        if "https" in search["keyword"]:
             for param in ["query", "transaction", "sort", "order"]:
                 # 从 URL 提取参数值，如果未找到，则使用默认值
-                param_value = self.get_param_value(search['keyword'], param)
+                param_value = self.get_param_value(search["keyword"], param)
                 if param_value:
                     params[param] = param_value
 

@@ -1,6 +1,8 @@
 import time
 import jwt
 import os
+import requests
+from datetime import datetime, timedelta
 from .base.common_imports import *
 from .base.scraper import BaseScrapy
 
@@ -11,48 +13,13 @@ class Rennigou(BaseScrapy):
             base_url="https://rl.rennigou.jp/supplier/search/index",
             page_size=12,
             client=client,
+            method="POST",
         )
         self.has_next = True
         self.issuer = "FQwcwtrHtmdxQ0aCKlQoxNMy9glEr4Zd"
         self.key = "OYZJEYvhNbwYG3WOecDzw8Mq8SixjD23"
-
-    async def get_response(self, search_term, page: int) -> Optional[str]:
-        for attempt in range(BaseScrapy.MAX_RETRIES):
-            try:
-                response = await self.client.post(
-                    self.base_url,
-                    data=self.create_data(search_term, page),
-                    headers=self.create_headers(),
-                    follow_redirects=True,
-                )
-                response.raise_for_status()
-                return response.text
-            except httpx.HTTPStatusError as e:
-                if e.response.status_code == 404:
-                    logger.error(f"请求的URL {e.response.url} 返回了404状态码，停止重试。")
-                    return None
-                logger.warning(
-                    f"由于状态码 {e.response.status_code}，正在进行第 {attempt + 1}/{BaseScrapy.MAX_RETRIES} 次重试..."
-                )
-                await asyncio.sleep(BaseScrapy.RETRY_DELAY)
-            except httpx.TimeoutException:
-                logger.warning(
-                    f"请求超时，正在进行第 {attempt + 1}/{BaseScrapy.MAX_RETRIES} 次重试..."
-                )
-                await asyncio.sleep(BaseScrapy.RETRY_DELAY)
-            except httpx.RequestError as e:
-                logger.warning(
-                    f"网络错误：{e}，正在进行第 {attempt + 1}/{BaseScrapy.MAX_RETRIES} 次重试..."
-                )
-                await asyncio.sleep(BaseScrapy.RETRY_DELAY)
-
-            except Exception as e:
-                logger.error(f"发生未预期的异常：{e}")
-                break  # 发生未知异常时终止循环
-        else:
-            logger.error(f"在尝试了 {BaseScrapy.MAX_RETRIES} 次后，仍未能成功获取响应。")
-
-        return None
+        self.uid, self.token = self.login()
+        self.create_headers()
 
     async def search(
         self, search_term, iteration_count, user_max_pages
@@ -60,7 +27,7 @@ class Rennigou(BaseScrapy):
         current_page = 1
 
         # 限制并发页数
-        concurrent_pages = search_term['max_concurrency']
+        concurrent_pages = search_term["max_concurrency"]
 
         while True:
             tasks = []
@@ -113,13 +80,41 @@ class Rennigou(BaseScrapy):
         return self._jwt_token
 
     def create_headers(self):
-        headers = {
+        self.check_token_expiry()
+        self.headers = {
             "Authorization": f"Bearer {self.create_jwt_token()}",
-            "uid": os.getenv("RENNIGOU_UID"),
-            "token": os.getenv("RENNIGOU_TOKEN"),
+            "uid": self.uid,
+            "token": self.token,
         }
+        return True
 
-        return headers
+    def login(self):
+        login_url = "https://rl.rennigou.jp/user/index/login"
+        payload = {
+            "type": 3,
+            "mail": os.getenv("RENNIGOU_MAIL"),
+            "pass": os.getenv("RENNIGOU_PASS"),
+        }
+        response = requests.post(login_url, data=payload)
+        response_json = response.json()
+
+        # 检查返回的代码是否成功
+        if response_json.get("code") == 0:
+            user_info = response_json.get("data", {}).get("userInfo", {})
+            uid = str(user_info.get("user_id"))
+            token = response_json.get("data", {}).get("token")
+
+            # 设置token的有效期为3天
+            self.token_expiry = datetime.now() + timedelta(days=3)
+
+            return uid, token
+        else:
+            raise Exception("登录失败: " + response_json.get("msg", "未知错误"))
+
+    # 在调用接口前检查token是否过期，如果过期则重新登录
+    def check_token_expiry(self):
+        if datetime.now() >= self.token_expiry:
+            self.uid, self.token = self.login()
 
     def to_json_exclude_specific_keys(self, search, exclude_keys=None):
         if exclude_keys is None:

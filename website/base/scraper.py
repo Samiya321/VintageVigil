@@ -8,11 +8,12 @@ class BaseScrapy(ABC):
     MAX_RETRIES = 3  # 最大重试次数
     RETRY_DELAY = 1  # 初始重试延迟（秒）
 
-    def __init__(self, base_url, page_size, client, headers=None):
+    def __init__(self, base_url, page_size, client, method, headers=None):
         self.base_url = base_url
         self.page_size = page_size
         self.headers = headers if headers else {}
         self.client = client
+        self.method = method
 
     async def search(
         self, search_term, iteration_count, user_max_pages
@@ -87,14 +88,24 @@ class BaseScrapy(ABC):
         return self.base_url, params
 
     async def get_response(self, search_term, page: int) -> Optional[str]:
-        params = await self.create_search_params(search_term, page)
-        url, params = await self.create_request_url(params)
-
         for attempt in range(BaseScrapy.MAX_RETRIES):
             try:
-                response = await self.client.get(
-                    url, params=params, headers=self.headers, follow_redirects=True
-                )
+                if self.method.upper() == "GET":
+                    params = await self.create_search_params(search_term, page)
+                    url, params = await self.create_request_url(params)
+                    response = await self.client.get(
+                        url, params=params, headers=self.headers, follow_redirects=True
+                    )
+                elif self.method.upper() == "POST":
+                    response = await self.client.post(
+                        self.base_url,
+                        data=self.create_data(search_term, page),
+                        headers=self.headers,
+                        follow_redirects=True,
+                    )
+                else:
+                    raise ValueError("Unsupported HTTP method")
+
                 response.raise_for_status()
                 return response.text
             except httpx.HTTPStatusError as e:
@@ -248,4 +259,7 @@ class BaseScrapy(ABC):
 
     @abstractmethod
     async def get_item_status(self, item) -> int:
+        pass
+
+    def create_data(self, search, page):
         pass
