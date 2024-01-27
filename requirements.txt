@@ -1,14 +1,14 @@
-python-dotenv
-toml
+python-dotenv==1.0.0
+toml==0.10.2
 
 httpx[http2]
 urllib3==1.26.18
-aiohttp
-parsel
+aiohttp==3.9.1
+parsel==1.8.1
 
-mercapi
-ecdsa
+mercapi==0.3.0
+ecdsa==0.18.0
 
-loguru
-telebot
+loguru==0.7.2
+telebot==0.0.5
 jwt
