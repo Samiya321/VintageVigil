@@ -2,14 +2,15 @@
 
 # 定义关联数组，包含网站名称和对应的URL
 declare -A urls
-urls["Rakuma"]="http://fril.jp/s"
+urls["任你购"]="https://rl.rennigou.jp/supplier/search/index"
 urls["Jumpshop"]="https://jumpshop-online.com/search"
+urls["Rakuma"]="http://fril.jp/s"
+urls["Paypay"]="http://paypayfleamarket.yahoo.co.jp/api/v1/search"
 urls["指南针"]="http://lashinbang-f-s.snva.jp"
+urls["骏河屋"]="http://www.suruga-ya.jp/search"
 urls["煤炉用户"]="https://api.mercari.jp/items/get_items"
 urls["煤炉搜索"]="https://api.mercari.jp/v2/entities:search"
-urls["Paypay"]="http://paypayfleamarket.yahoo.co.jp/api/v1/search"
-urls["任你购"]="https://rl.rennigou.jp/supplier/search/index"
-urls["骏河屋"]="http://www.suruga-ya.jp/search"
+urls["Telegram"]="https://api.telegram.org"
 
 # 提示用户输入测试次数，如果没有输入，默认为10次
 read -p "请输入测试次数（默认为10次）: " test_count
@@ -51,7 +52,7 @@ for site_name in "${!urls[@]}"; do
     total_starttransfer_time=$(echo "$total_starttransfer_time + $starttransfer_time" | bc)
     total_total_time=$(echo "$total_total_time + $total_time" | bc)
 
-    echo "第 $i 次测试完成"
+    # echo "第 $i 次测试完成"
   done
 
   # 计算平均值并输出
