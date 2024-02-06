@@ -43,6 +43,7 @@ class MonitoringController:
         # Initialize telegram bots
         asyncio_helper.REQUEST_TIMEOUT = 10
         asyncio_helper.proxy = proxy or None
+        # asyncio_helper.API_URL = "https://tg.samiya.pro/bot{0}/{1}"
 
         telegram_bot_tokens = [
             os.getenv("TELEGRAM_BOT_TOKEN_1"),
@@ -51,7 +52,10 @@ class MonitoringController:
 
         for index, token in enumerate(telegram_bot_tokens):
             if token:
-                self.telegram_bots[index] = AsyncTeleBot(token, parse_mode=parse_mode)
+                self.telegram_bots[index] = AsyncTeleBot(
+                    token,
+                    parse_mode=parse_mode,
+                )
 
     async def close_resources(self):
         """
@@ -84,7 +88,7 @@ class MonitoringController:
         and setting up and monitoring user directories asynchronously.
         """
         logger.info("Starting VintageVigil...")
-        await self.initialize_resources(parse_mode= 'Markdown')
+        await self.initialize_resources(parse_mode="Markdown")
         user_directories = self.fetch_user_directories("user")
 
         monitor_tasks = [
