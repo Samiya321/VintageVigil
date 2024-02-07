@@ -7,16 +7,17 @@ from .monitor_keyword import process_search_keyword
 
 
 async def monitor_site(
-    site_config, database, notification_clients, user_dir, is_running, httpx_client
+    site_config, database, notification_clients, user_dir, is_running, http_client
 ):
     """
     Monitor a specific website for changes in product information.
     """
     logger.info(f"Starting monitoring for site: {site_config[0]}")
 
-    scraper = fetch_scraper(site_config[1]['website_name'], httpx_client)
+    scraper = fetch_scraper(site_config[1]['website_name'], http_client)
 
     if scraper and site_config[1:]:
+        await scraper.async_init()
         search_tasks = [
             process_search_keyword(
                 scraper,

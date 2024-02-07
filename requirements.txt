@@ -2,8 +2,9 @@ python-dotenv==1.0.0
 toml==0.10.2
 
 httpx[http2]
-urllib3==1.26.18
 aiohttp==3.9.1
+tenacity
+urllib3
 parsel==1.8.1
 
 mercapi==0.3.0

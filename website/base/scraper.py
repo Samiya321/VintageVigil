@@ -8,12 +8,15 @@ class BaseScrapy(ABC):
     MAX_RETRIES = 3  # 最大重试次数
     RETRY_DELAY = 1  # 初始重试延迟（秒）
 
-    def __init__(self, base_url, page_size, client, method, headers=None):
+    def __init__(self, base_url, page_size, http_client, method, headers=None):
         self.base_url = base_url
         self.page_size = page_size
         self.headers = headers if headers else {}
-        self.client = client
+        self.http_client = http_client
         self.method = method
+
+    async def async_init(self):
+        pass
 
     async def search(
         self, search_term, iteration_count, user_max_pages
@@ -88,50 +91,26 @@ class BaseScrapy(ABC):
         return self.base_url, params
 
     async def get_response(self, search_term, page: int) -> Optional[str]:
-        for attempt in range(BaseScrapy.MAX_RETRIES):
-            try:
-                if self.method.upper() == "GET":
-                    params = await self.create_search_params(search_term, page)
-                    url, params = await self.create_request_url(params)
-                    response = await self.client.get(
-                        url, params=params, headers=self.headers, follow_redirects=True
-                    )
-                elif self.method.upper() == "POST":
-                    response = await self.client.post(
-                        self.base_url,
-                        data=self.create_data(search_term, page),
-                        headers=self.headers,
-                        follow_redirects=True,
-                    )
-                else:
-                    raise ValueError("Unsupported HTTP method")
-
-                response.raise_for_status()
-                return response.text
-            except httpx.HTTPStatusError as e:
-                if e.response.status_code == 404:
-                    logger.error(f"请求的URL {e.response.url} 返回了404状态码，停止重试。")
-                    return None
-                logger.warning(
-                    f"由于状态码 {e.response.status_code}，正在进行第 {attempt + 1}/{BaseScrapy.MAX_RETRIES} 次重试..."
+        try:
+            if self.method.upper() == "GET":
+                params = await self.create_search_params(search_term, page)
+                url, params = await self.create_request_url(params)
+                response = await self.http_client.get(
+                    url, params=params, headers=self.headers
                 )
-                await asyncio.sleep(BaseScrapy.RETRY_DELAY)
-            except httpx.TimeoutException:
-                logger.warning(
-                    f"请求超时，正在进行第 {attempt + 1}/{BaseScrapy.MAX_RETRIES} 次重试..."
+            elif self.method.upper() == "POST":
+                data = self.create_data(search_term, page)
+                response = await self.http_client.post(
+                    self.base_url, data=data, headers=self.headers
                 )
-                await asyncio.sleep(BaseScrapy.RETRY_DELAY)
-            except httpx.RequestError as e:
-                logger.warning(
-                    f"网络错误：{e}，正在进行第 {attempt + 1}/{BaseScrapy.MAX_RETRIES} 次重试..."
-                )
-                await asyncio.sleep(BaseScrapy.RETRY_DELAY)
-
-            except Exception as e:
-                logger.error(f"发生未预期的异常：{e}")
-                break  # 发生未知异常时终止循环
-        else:
-            logger.error(f"在尝试了 {BaseScrapy.MAX_RETRIES} 次后，仍未能成功获取响应。")
+            else:
+                raise ValueError("Unsupported HTTP method")
+            response.raise_for_status()
+            response_text = await response.text()
+            await response.close()
+            return response_text
+        except Exception as e:
+            logger.error(f"发生未预期的异常：{e}")
 
         return None
 

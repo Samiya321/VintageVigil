@@ -1,24 +1,26 @@
 import time
 import jwt
 import os
-import requests
 from datetime import datetime, timedelta
 from .base.common_imports import *
 from .base.scraper import BaseScrapy
 
 
 class Rennigou(BaseScrapy):
-    def __init__(self, client):
+    def __init__(self, http_client):
         super().__init__(
             base_url="https://rl.rennigou.jp/supplier/search/index",
             page_size=12,
-            client=client,
+            http_client=http_client,
             method="POST",
         )
         self.has_next = True
         self.issuer = "FQwcwtrHtmdxQ0aCKlQoxNMy9glEr4Zd"
         self.key = "OYZJEYvhNbwYG3WOecDzw8Mq8SixjD23"
-        self.uid, self.token = self.login()
+        self.uid, self.token = "", ""
+
+    async def async_init(self):
+        self.uid, self.token = await self.login()
         self.create_headers()
 
     async def search(
@@ -88,15 +90,16 @@ class Rennigou(BaseScrapy):
         }
         return True
 
-    def login(self):
+    async def login(self):
         login_url = "https://rl.rennigou.jp/user/index/login"
         payload = {
             "type": 3,
             "mail": os.getenv("RENNIGOU_MAIL"),
             "pass": os.getenv("RENNIGOU_PASS"),
         }
-        response = requests.post(login_url, data=payload)
-        response_json = response.json()
+        response = await self.http_client.post(login_url, data=payload)
+        response_json = await response.json()
+        await response.close()
 
         # 检查返回的代码是否成功
         if response_json.get("code") == 0:

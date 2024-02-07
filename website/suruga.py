@@ -5,11 +5,12 @@ from .base.scraper import BaseScrapy
 
 
 class Suruga(BaseScrapy):
-    def __init__(self, client):
+
+    def __init__(self, http_client):
         super().__init__(
             base_url="http://www.suruga-ya.jp/search",
             page_size=24,
-            client=client,
+            http_client=http_client,
             method="GET",
         )
 

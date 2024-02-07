@@ -8,7 +8,7 @@ from telebot import asyncio_helper
 from loguru import logger
 
 from monitor import setup_and_monitor
-
+from common import AsyncHTTPXClient, AsyncAIOHTTPClient
 
 class MonitoringController:
     def __init__(self):
@@ -16,17 +16,17 @@ class MonitoringController:
         Initializes the MonitoringController class.
 
         The MonitoringController class is responsible for controlling the monitoring loop,
-        managing resources such as the httpx client and telegram bots, and starting the monitoring process.
+        managing resources such as the http_client and telegram bots, and starting the monitoring process.
         """
         self.is_running = True  # 用于通知监控任务停止
-        self.httpx_client = None
+        self.http_client = None
         self.telegram_bots = {}
 
     async def initialize_resources(self, parse_mode=None):
         """
         Initializes the necessary resources for monitoring.
 
-        This method loads the environment variables, initializes the httpx AsyncClient,
+        This method loads the environment variables, initializes the http_client,
         and initializes the telegram bots.
 
         Args:
@@ -35,10 +35,18 @@ class MonitoringController:
         load_dotenv()
         proxy = os.getenv("HTTP_PROXY")
 
-        # Initialize httpx AsyncClient
-        self.httpx_client = httpx.AsyncClient(
-            proxies=proxy, verify=False, http2=False, timeout=10, follow_redirects=True
-        )
+        http_client_type = os.getenv("HTTP_CLIENT")
+
+        if http_client_type == "httpx":
+            # 使用 AsyncHTTPXClient
+            self.http_client = AsyncHTTPXClient(
+                http2=False, timeout=10, proxy=proxy, redirects=True, ssl_verify=False
+            )
+        else:
+            # 默认使用 AsyncAIOHTTPClient
+            self.http_client = AsyncAIOHTTPClient(
+                http2=False, timeout=10.0, proxy=proxy, redirects=True, ssl_verify=False
+            )
 
         # Initialize telegram bots
         asyncio_helper.REQUEST_TIMEOUT = 10
@@ -61,12 +69,12 @@ class MonitoringController:
         """
         Closes the allocated resources.
 
-        This method closes the httpx client and telegram bot resources.
+        This method closes the http_client and telegram bot resources.
         """
-        logger.info("Closing httpx client and telegram bot resources")
-        if self.httpx_client:
-            await self.httpx_client.aclose()
-            logger.info("httpx client has closed")
+        logger.info("Closing http_client and telegram bot resources")
+        if self.http_client:
+            await self.http_client.close()
+            logger.info("http_client has closed")
 
         for index, bot in self.telegram_bots.items():
             await bot.close_session()
@@ -94,7 +102,7 @@ class MonitoringController:
         monitor_tasks = [
             asyncio.create_task(
                 setup_and_monitor(
-                    user_dir, self.is_running, self.httpx_client, self.telegram_bots
+                    user_dir, self.is_running, self.http_client, self.telegram_bots
                 )
             )
             for user_dir in user_directories

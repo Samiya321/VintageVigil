@@ -3,7 +3,7 @@ from telebot.async_telebot import AsyncTeleBot
 import asyncio
 
 
-API_TOKEN = "6969437418:AAHEkw22S7Ndi66KHMGrsHmHDDkVrx6rdnU"
+API_TOKEN = ""
 bot = AsyncTeleBot(API_TOKEN)
 
 # 根据您的项目结构，您可能需要导入相关模块

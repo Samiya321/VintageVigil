@@ -3,11 +3,11 @@ from .base.scraper import BaseScrapy
 
 
 class Lashinbang(BaseScrapy):
-    def __init__(self, client):
+    def __init__(self, http_client):
         super().__init__(
             base_url="http://lashinbang-f-s.snva.jp",
             page_size=100,
-            client=client,
+            http_client=http_client,
             method="GET",
         )
 

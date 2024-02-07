@@ -1,13 +1,13 @@
 from website import *
 
 
-def fetch_scraper(website_name, httpx_client):
+def fetch_scraper(website_name, http_client):
     """
     Create and return a scraper object based on the website name.
 
     Args:
         website_name (str): The name of the website for which the scraper object is to be created.
-        httpx_client: An HTTP client object used for making HTTP requests.
+        http_client: An HTTP client object used for making HTTP requests.
 
     Returns:
         Scraper: An instance of the scraper object corresponding to the website name.
@@ -27,6 +27,6 @@ def fetch_scraper(website_name, httpx_client):
     }
     scraper_class = scrapers.get(website_name)
     if scraper_class:
-        return scraper_class(httpx_client)
+        return scraper_class(http_client)
     else:
         raise ValueError(f"No scraper found for {website_name}")

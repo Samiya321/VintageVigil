@@ -37,10 +37,14 @@ class MercariItemStatus:
 
 
 class BaseSearch(ABC):
-    def __init__(self, root_url, client, page_size=120):
+
+    def __init__(self, root_url, http_client, page_size=120):
         self.page_size = page_size
         self.root_url = root_url
-        self.client = client
+        self.http_client = http_client
+
+    async def async_init(self):
+        pass
 
     async def search(self, **kwargs):
         pass  # 由子类实现
@@ -49,47 +53,22 @@ class BaseSearch(ABC):
         pass  # 由子类实现
 
     async def get_response(self, method, data=None, params=None):
-        max_retries = 3  # 最大重试次数
+        headers = self.create_headers(method.upper())
+        try:
+            if method.lower() == "post":
+                response = await self.http_client.post(
+                    self.root_url, data=data, headers=headers
+                )
+            else:
+                response = await self.http_client.get(
+                    self.root_url, params=params, headers=headers
+                )
+            response.raise_for_status()
+            await response.close()
 
-        for attempt in range(max_retries):
-            request_method = method.lower()
-            request_info = f"请求方法: {'POST' if request_method == 'post' else 'GET'}，尝试次数: {attempt + 1}"
-            try:
-                headers = self.create_headers(method.upper())
-                if request_method == "post":
-                    response = await self.client.post(
-                        url=self.root_url,
-                        headers=headers,
-                        data=data,
-                    )
-                else:  # 默认为 GET 请求
-                    response = await self.client.get(
-                        url=self.root_url,
-                        headers=headers,
-                        params=params,
-                        follow_redirects=True,
-                    )
-
-                response.raise_for_status()
-                # logger.info(f"{request_info} - 请求成功。")
-                return response.json()
-
-            except httpx.HTTPStatusError as e:
-                if e.response.status_code == 503:
-                    logger.warning(f"{request_info} - 服务器暂不可用 (503)，将在延迟后重试。")
-                    continue  # 503 状态码时直接重试
-                else:
-                    logger.error(f"{request_info} - HTTP 错误 {e.response.status_code}。")
-            except httpx.TimeoutException as e:
-                logger.error(f"{request_info} - 请求超时：{e}。")
-            except httpx.RequestError as e:
-                logger.error(f"{request_info} - 网络请求错误：{e}。")
-            except Exception as e:
-                logger.error(f"{request_info} - 遇到意外错误：{e}，停止重试。")
-                break  # 遇到意外错误时中断
-
-        logger.error(f"在尝试了 {max_retries} 次后，仍未能成功获取响应。")
-        return None
+            return await response.json()
+        except Exception as e:
+            logger.error(f"遇到错误：{e}")
 
     def create_headers(self, method):
         # ... 实现创建请求头的逻辑

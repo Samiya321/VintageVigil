@@ -5,11 +5,12 @@ from .base.scraper import BaseScrapy
 
 
 class Paypay(BaseScrapy):
-    def __init__(self, client):
+
+    def __init__(self, http_client):
         super().__init__(
             base_url="http://paypayfleamarket.yahoo.co.jp/api/v1/search",
             page_size=100,
-            client=client,
+            http_client=http_client,
             method="GET",
         )
 

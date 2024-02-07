@@ -4,8 +4,9 @@ from typing import AsyncGenerator
 
 
 class MercariItems(BaseSearch):
-    def __init__(self, client):
-        super().__init__("https://api.mercari.jp/items/get_items", client)
+
+    def __init__(self, http_client):
+        super().__init__("https://api.mercari.jp/items/get_items", http_client)
         self.has_next = True
         self.pager_id = ""
 

@@ -6,25 +6,25 @@ from .monitor_website import monitor_site
 from .initialization import InitializationManager
 
 
-async def _load_user_configuration(user_dir, httpx_client, telegram_bots):
+async def _load_user_configuration(user_dir, http_client, telegram_bots):
     """
     Load the configuration for a user and initialize required components.
     """
     try:
-        initialize = InitializationManager(httpx_client, telegram_bots)
+        initialize = InitializationManager(http_client, telegram_bots)
         return await initialize.setup_monitoring_for_user(user_dir)
     except Exception as e:
         logger.error(f"Error loading configuration for {user_dir}: {e}")
         return None, None, None
 
 
-async def setup_and_monitor(user_dir, is_running, httpx_client, telegram_bots):
+async def setup_and_monitor(user_dir, is_running, http_client, telegram_bots):
     """
     Setup and start monitoring for a specific user.
     """
     logger.info(f"Setting up monitoring for user: {user_dir}")
     config, database, notification_clients = await _load_user_configuration(
-        user_dir, httpx_client, telegram_bots
+        user_dir, http_client, telegram_bots
     )
 
     if config and database and notification_clients:
@@ -36,7 +36,7 @@ async def setup_and_monitor(user_dir, is_running, httpx_client, telegram_bots):
                     notification_clients,
                     user_dir,
                     is_running,
-                    httpx_client,
+                    http_client,
                 )
                 for website in config.websites
             ]

@@ -6,7 +6,7 @@ from loguru import logger
 
 class WecomClient:
     def __init__(
-        self, corp_id, corp_secret, agent_id, user_ids, httpx_client, send_type="news"
+        self, corp_id, corp_secret, agent_id, user_ids, http_client, send_type="news"
     ):
         self.corp_id = corp_id
         self.corp_secret = corp_secret
@@ -15,14 +15,14 @@ class WecomClient:
         self.access_token = None
         self.token_expires_at = None
         self.send_type = send_type
-        self.client = httpx_client
+        self.http_client = http_client
         self.client_type = "wecom"
 
     async def initialize(self):
         for index, chat_id in enumerate(self.user_ids):
             await self.send_message(
                 title="WeCom 实例化成功",
-                photo_url="https://repo.samiya.workers.dev/Samiya321/VintageVigil/main/favicon.ico",
+                photo_url="https://raw.githubusercontent.com/Samiya321/VintageVigil/main/favicon.ico",
                 message="WeCom 实例化成功。",
                 chat_ids_index=index,
             )
@@ -42,8 +42,9 @@ class WecomClient:
     async def _fetch_access_token(self):
         url = f"https://qyapi.weixin.qq.com/cgi-bin/gettoken?corpid={self.corp_id}&corpsecret={self.corp_secret}"
         try:
-            response = await self.client.get(url)
-            data = response.json()
+            response = await self.http_client.get(url)
+            data = await response.json()
+            await response.close()
             self.access_token = data.get("access_token")
             expires_in = data.get("expires_in", 7200)  # 默认有效期7200秒
             self.token_expires_at = datetime.now() + timedelta(seconds=expires_in)
@@ -62,20 +63,25 @@ class WecomClient:
     async def _upload_image(self, image_url, access_token):
         upload_url = f"https://qyapi.weixin.qq.com/cgi-bin/media/upload?access_token={access_token}&type=image"
         try:
-            image_response = await self.client.get(image_url, follow_redirects=True)
+            image_response = await self.http_client.get(image_url)
             image_response.raise_for_status()
 
-            files = {"media": BytesIO(image_response.content)}
-            response = await self.client.post(upload_url, files=files)
-            return response.json().get("media_id")
+            files = {"media": BytesIO(await image_response.content())}
+            response = await self.http_client.post(upload_url, files=files)
+            response_json = await response.json()
+            await response.close()
+            await image_response.close()
+            return response_json.get("media_id")
         except Exception as e:
             logger.error(f"上传图片失败: {e}")
             return None
 
     async def _send_wechat_message(self, url, message_payload):
         try:
-            response = await self.client.post(url, json=message_payload)
-            return response.json()
+            response = await self.http_client.post(url, json=message_payload)
+            response_json = await response.json()
+            await response.close()
+            return response_json
         except Exception as e:
             logger.error(f"消息发送失败: {e}")
             return {"error": "Failed to send message"}

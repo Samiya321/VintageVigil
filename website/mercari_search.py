@@ -5,8 +5,9 @@ from uuid import uuid4
 
 
 class MercariSearch(BaseSearch):
-    def __init__(self, client):
-        super().__init__("https://api.mercari.jp/v2/entities:search", client)
+
+    def __init__(self, http_client):
+        super().__init__("https://api.mercari.jp/v2/entities:search", http_client)
 
     async def search(
         self, search, iteration_count, user_max_pages

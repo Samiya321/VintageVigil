@@ -5,8 +5,8 @@ from common import Config, ProductDatabase, TelegramClient, setup_logger, WecomC
 
 
 class InitializationManager:
-    def __init__(self, httpx_client, telegram_bots):
-        self.httpx_client = httpx_client
+    def __init__(self, http_client, telegram_bots):
+        self.http_client = http_client
         self.telegram_bots = telegram_bots
 
     async def setup_notification_clients(self, notification_config):
@@ -28,7 +28,7 @@ class InitializationManager:
                 notification_clients[client_key] = TelegramClient(
                     bot,
                     notification_config["telegram_chat_ids"],
-                    self.httpx_client,
+                    self.http_client,
                     notification_config["tg_send_type"],
                 )
                 await notification_clients[client_key].initialize()
@@ -45,7 +45,7 @@ class InitializationManager:
                     corp_secret,
                     agent_id,
                     notification_config["wecom_user_ids"],
-                    self.httpx_client,
+                    self.http_client,
                     notification_config["we_send_type"],
                 )
                 await notification_clients[client_key].initialize()

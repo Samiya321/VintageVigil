@@ -3,7 +3,7 @@ from telebot import asyncio_helper
 
 
 class TelegramClient:
-    def __init__(self, bot, chat_ids: dict, httpx_client, send_type="news"):
+    def __init__(self, bot, chat_ids: dict, http_client, send_type="news"):
         """
         初始化 Telegram 客户端。
 
@@ -16,7 +16,7 @@ class TelegramClient:
         self.bot = bot
         self.chat_ids = chat_ids
         self.send_type = send_type
-        self.client = httpx_client
+        self.http_client = http_client
         self.client_type = "telegram"
 
     async def initialize(self):
@@ -25,7 +25,7 @@ class TelegramClient:
         """
         for index, chat_id in enumerate(self.chat_ids):
             await self.send_message(
-                photo_url="https://repo.samiya.workers.dev/Samiya321/VintageVigil/main/favicon.ico",
+                photo_url="https://raw.githubusercontent.com/Samiya321/VintageVigil/main/favicon.ico",
                 message="TelegramClient 实例化成功。",
                 chat_ids_index=index,
             )
@@ -98,9 +98,10 @@ class TelegramClient:
                     )
         # 如果所有修改过的链接都失败了，尝试请求原始图片并发送
         try:
-            response = await self.client.get(photo_url, follow_redirects=True)
-            response.raise_for_status()  # 确保请求成功
-            image_data = response.content
+            response = await self.http_client.get(photo_url)
+            response.raise_for_status()
+            image_data = await response.content()
+            await response.close()
             await send_func(image_data)
         except Exception as e:
             logger.error(
