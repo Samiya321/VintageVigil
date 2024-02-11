@@ -38,7 +38,6 @@ async def process_search_keyword(
                     search_query["user_max_pages"],
                 )
 
-                telegram_tasks = []
                 for item in database.upsert_products(
                     products_to_process,
                     search_query["keyword"],
@@ -51,10 +50,7 @@ async def process_search_keyword(
                             search_query,
                             message_template,
                             notification_clients,
-                            telegram_tasks,
                         )
-
-                        await _execute_telegram_tasks(telegram_tasks)
 
                 logger.info(f"--------- End of iteration {iteration_count} ---------\n")
                 iteration_count += 1
@@ -72,8 +68,3 @@ async def _collect_products(
             break
         products.add(product)
     return products
-
-
-async def _execute_telegram_tasks(telegram_tasks):
-    if telegram_tasks:
-        await asyncio.gather(*telegram_tasks, return_exceptions=True)

@@ -32,33 +32,51 @@ class MonitoringController:
         Args:
             parse_mode (str, optional): The parse mode for telegram messages. Defaults to None.
         """
+
         load_dotenv()
+
         proxy = os.getenv("HTTP_PROXY")
+
+        timeout = 10.0
+
+        # Initialize http client
 
         http_client_type = os.getenv("HTTP_CLIENT")
 
         if http_client_type == "httpx":
             # 使用 AsyncHTTPXClient
             self.http_client = AsyncHTTPXClient(
-                http2=False, timeout=10, proxy=proxy, redirects=True, ssl_verify=False
+                http2=False,
+                timeout=timeout,
+                proxy=proxy,
+                redirects=True,
+                ssl_verify=False,
             )
         else:
             # 默认使用 AsyncAIOHTTPClient
             self.http_client = AsyncAIOHTTPClient(
-                http2=False, timeout=10.0, proxy=proxy, redirects=True, ssl_verify=False
+                http2=False,
+                timeout=timeout,
+                proxy=proxy,
+                redirects=True,
+                ssl_verify=False,
             )
 
         # Initialize telegram bots
-        asyncio_helper.REQUEST_TIMEOUT = 10
+        asyncio_helper.REQUEST_TIMEOUT = timeout
         asyncio_helper.proxy = proxy or None
         # asyncio_helper.API_URL = "https://tg.samiya.pro/bot{0}/{1}"
 
-        telegram_bot_tokens = [
-            os.getenv("TELEGRAM_BOT_TOKEN_1"),
-            os.getenv("TELEGRAM_BOT_TOKEN_2"),
-        ]
+        # 动态获取所有的TELEGRAM_BOT_TOKEN环境变量
+        telegram_bot_tokens = {
+            key: value
+            for key, value in os.environ.items()
+            if key.startswith("TELEGRAM_BOT_TOKEN")
+        }
 
-        for index, token in enumerate(telegram_bot_tokens):
+        self.telegram_bots = {}  # 确保这个字典已经被初始化
+
+        for index, token in telegram_bot_tokens.items():
             if token:
                 self.telegram_bots[index] = AsyncTeleBot(
                     token,

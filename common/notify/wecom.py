@@ -1,8 +1,6 @@
 from datetime import datetime, timedelta
-from io import BytesIO
-
 from loguru import logger
-
+import asyncio
 
 class WecomClient:
     def __init__(
@@ -12,11 +10,29 @@ class WecomClient:
         self.corp_secret = corp_secret
         self.agent_id = agent_id
         self.user_ids = user_ids
+        self.http_client = http_client
+        self.send_type = send_type
+        self.client_type = "wecom"
         self.access_token = None
         self.token_expires_at = None
-        self.send_type = send_type
-        self.http_client = http_client
-        self.client_type = "wecom"
+        self.message_queue = asyncio.Queue()
+        self.worker_task = asyncio.create_task(self.process_message_queue())
+
+    async def _make_request(self, url, method="get", **kwargs):
+        """统一处理网络请求"""
+        try:
+            if method == "get":
+                response = await self.http_client.get(url, **kwargs)
+            else:
+                response = await self.http_client.post(url, **kwargs)
+            data = await response.json()
+            if data.get("errcode") != 0:
+                logger.error(f"Error from WeCom API: {data.get('errmsg')}")
+                return None
+            return data
+        except Exception as e:
+            logger.error(f"Request failed: {e}")
+            return None
 
     async def initialize(self):
         for index, chat_id in enumerate(self.user_ids):
@@ -28,30 +44,24 @@ class WecomClient:
             )
 
     async def get_access_token(self, force_refresh=False):
-        current_time = datetime.now()
+        """获取或刷新访问令牌"""
         if (
             self.access_token
-            and self.token_expires_at
-            and self.token_expires_at > current_time
+            and self.token_expires_at > datetime.now()
             and not force_refresh
         ):
             return self.access_token
-
         return await self._fetch_access_token()
 
     async def _fetch_access_token(self):
+        """从WeCom API获取新的访问令牌"""
         url = f"https://qyapi.weixin.qq.com/cgi-bin/gettoken?corpid={self.corp_id}&corpsecret={self.corp_secret}"
-        try:
-            response = await self.http_client.get(url)
-            data = await response.json()
-            await response.close()
+        data = await self._make_request(url)
+        if data:
             self.access_token = data.get("access_token")
-            expires_in = data.get("expires_in", 7200)  # 默认有效期7200秒
+            expires_in = data.get("expires_in", 7200)
             self.token_expires_at = datetime.now() + timedelta(seconds=expires_in)
-            return self.access_token
-        except Exception as e:
-            logger.error(f"获取访问令牌失败: {e}")
-            return None
+        return self.access_token
 
     async def upload_image_get_media_id(self, image_url):
         access_token = await self.get_access_token()
@@ -61,32 +71,21 @@ class WecomClient:
         return await self._upload_image(image_url, access_token)
 
     async def _upload_image(self, image_url, access_token):
-        upload_url = f"https://qyapi.weixin.qq.com/cgi-bin/media/upload?access_token={access_token}&type=image"
+        upload_url = f"https://qyapi.weixin.qq.com/cgi-bin/media/upload?access_token={access_token}&type=file"
         try:
             image_response = await self.http_client.get(image_url)
             image_response.raise_for_status()
 
-            files = {"media": BytesIO(await image_response.content())}
+            files = {"file": await image_response.content()}
             response = await self.http_client.post(upload_url, files=files)
             response_json = await response.json()
-            await response.close()
-            await image_response.close()
             return response_json.get("media_id")
         except Exception as e:
             logger.error(f"上传图片失败: {e}")
             return None
 
-    async def _send_wechat_message(self, url, message_payload):
-        try:
-            response = await self.http_client.post(url, json=message_payload)
-            response_json = await response.json()
-            await response.close()
-            return response_json
-        except Exception as e:
-            logger.error(f"消息发送失败: {e}")
-            return {"error": "Failed to send message"}
-
     async def send_text(self, message: str, chat_id):
+        """向企业微信用户发送文本消息"""
         access_token = await self.get_access_token()
         if not access_token:
             return {"error": "Failed to get access token"}
@@ -98,9 +97,10 @@ class WecomClient:
             "agentid": self.agent_id,
             "text": {"content": message},
         }
-        return await self._send_wechat_message(url, payload)
+        return await self._make_request(url, method="post", json=payload)
 
     async def send_photo(self, photo_url: str, chat_id):
+        """上传图片到企业微信服务器并向用户发送图片消息"""
         media_id = await self.upload_image_get_media_id(photo_url)
         if not media_id:
             return {"error": "Failed to upload image"}
@@ -116,11 +116,12 @@ class WecomClient:
             "agentid": self.agent_id,
             "image": {"media_id": media_id},
         }
-        return await self._send_wechat_message(url, payload)
+        return await self._make_request(url, method="post", json=payload)
 
     async def send_news(
         self, message: str, photo_url: str, message_url: str, title: str, chat_id
     ):
+        """向企业微信用户发送图文消息"""
         access_token = await self.get_access_token()
         if not access_token:
             return {"error": "Failed to get access token"}
@@ -135,13 +136,13 @@ class WecomClient:
                     {
                         "title": title,
                         "description": message,
-                        "picurl": photo_url,
                         "url": message_url,
+                        "picurl": photo_url,
                     }
                 ]
             },
         }
-        return await self._send_wechat_message(url, payload)
+        return await self._make_request(url, method="post", json=payload)
 
     async def send_message(
         self,
@@ -163,3 +164,57 @@ class WecomClient:
         else:
             logger.warning(f"未知的发送类型: {self.send_type}")
             return {"error": "Unknown send type"}
+
+    async def process_message_queue(self):
+        """
+        持续处理消息队列中的消息。
+        """
+        while True:
+            message_info = await self.message_queue.get()
+
+            # 提取所有需要的信息
+            message = message_info["message"]
+            photo_url = message_info.get("photo_url", "")
+            message_url = message_info.get("message_url", "")
+            title = message_info.get("title", "")
+            chat_ids_index = message_info["chat_ids_index"]  # 直接使用索引
+
+            try:
+                # 直接调用send_message方法发送消息
+                await self.send_message(
+                    message=message,
+                    photo_url=photo_url,
+                    message_url=message_url,
+                    title=title,
+                    chat_ids_index=chat_ids_index,
+                )
+            except Exception as e:
+                logger.error(f"Error sending WeCom message: {e}")
+            finally:
+                self.message_queue.task_done()
+
+    async def enqueue_message(
+        self, message, photo_url="", message_url="", title="", chat_ids_index=0
+    ):
+        """
+        将消息根据类型加入到队列中。
+        """
+        # 直接使用send_type从self获取，不需要作为参数传递
+        await self.message_queue.put(
+            {
+                "message": message,
+                "photo_url": photo_url,
+                "message_url": message_url,
+                "title": title,
+                "chat_ids_index": chat_ids_index,  # 使用索引而非直接传chat_id
+            }
+        )
+
+    async def shutdown(self):
+        """优雅地关闭消息队列和后台任务"""
+        await self.message_queue.join()
+        self.worker_task.cancel()
+        try:
+            await self.worker_task
+        except asyncio.CancelledError:
+            pass

@@ -41,11 +41,20 @@ async def setup_and_monitor(user_dir, is_running, http_client, telegram_bots):
                 for website in config.websites
             ]
             await asyncio.gather(*website_tasks, return_exceptions=True)
+        except KeyboardInterrupt:
+            logger.error("KeyboardInterrupt caught, shutting down...")
         except Exception as e:
             logger.error(f"Error in monitoring process for {user_dir}: {e}")
         finally:
             if database:
                 database.close()
                 logger.info(f"Closed database for user: {user_dir}")
+            if notification_clients:
+                for client_name, client in notification_clients.items():
+                    try:
+                        await client.shutdown()
+                        logger.info(f"Shutdown {client_name} successfully.")
+                    except Exception as e:
+                        logger.info(f"Error shutting down {client_name}: {e}")
 
     logger.info(f"Monitoring stopped for user: {user_dir}")
