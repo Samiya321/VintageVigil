@@ -11,6 +11,8 @@ urls["骏河屋"]="http://www.suruga-ya.jp/search"
 urls["煤炉用户"]="https://api.mercari.jp/items/get_items"
 urls["煤炉搜索"]="https://api.mercari.jp/v2/entities:search"
 urls["Telegram"]="https://api.telegram.org"
+urls["任意门"]="https://sig.doorzo.com"
+urls["hoyoyo"]="https://cn.hoyoyo.com"
 
 # 提示用户输入测试次数，如果没有输入，默认为10次
 read -p "请输入测试次数（默认为10次）: " test_count

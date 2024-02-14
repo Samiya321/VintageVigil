@@ -6,3 +6,4 @@ from .mercari_items import MercariItems
 from .paypay import Paypay
 from .suruga import Suruga
 from .rennigou import Rennigou
+from .hoyoyo import HoYoYo

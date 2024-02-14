@@ -24,6 +24,7 @@ def fetch_scraper(website_name, http_client):
         "fril": Fril,
         "suruga": Suruga,
         "rennigou": Rennigou,
+        "hoyoyo": HoYoYo,
     }
     scraper_class = scrapers.get(website_name)
     if scraper_class:
