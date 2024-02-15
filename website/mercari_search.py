@@ -58,7 +58,7 @@ class MercariSearch(BaseSearch):
                 self.create_data(search, page, sort_type), ensure_ascii=False
             ).encode("utf-8")
             response = await self.get_response("POST", data=serialized_data)
-            if "items" not in response:
+            if (response is None) or ("items" not in response):
                 return []  # 处理空响应或缺少项的情况
 
             tasks = [self.create_product_from_card(item) for item in response["items"]]

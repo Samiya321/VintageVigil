@@ -1,5 +1,4 @@
 from loguru import logger
-from telebot import asyncio_helper
 import asyncio
 
 class TelegramClient:

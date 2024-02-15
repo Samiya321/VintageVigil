@@ -1,5 +1,4 @@
 from loguru import logger
-import os
 import asyncio
 
 from .monitor_website import monitor_site
