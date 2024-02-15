@@ -75,11 +75,14 @@ class BaseSearch(ABC):
         headers = {
             "DPoP": self.create_headers_dpop(method),
             "X-Platform": "web",  # mercari requires this header
-            "Accept": "*/*",
+            "Accept": "application/json, text/plain, */*",
             "Accept-Encoding": "deflate, gzip",
             "Content-Type": "application/json; charset=utf-8",
             # courtesy header since they're blocking python-requests (returns 0 results)
-            "User-Agent": "python-mercari",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36 Edg/121.0.0.0",
+            "Cache-Control": "no-cache",
+            "Pragma": "no-cache",
+            "authority": "api.mercari.jp",
         }
         return headers
 
