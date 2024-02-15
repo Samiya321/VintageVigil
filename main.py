@@ -1,5 +1,4 @@
 import asyncio
-import httpx
 import os
 from dotenv import load_dotenv
 from telebot.async_telebot import AsyncTeleBot
@@ -35,13 +34,13 @@ class MonitoringController:
 
         load_dotenv()
 
-        proxy = os.getenv("HTTP_PROXY")
+        proxy = os.getenv('HTTP_PROXY')
 
         timeout = 10.0
 
         # Initialize http client
 
-        http_client_type = os.getenv("HTTP_CLIENT")
+        http_client_type = os.getenv('HTTP_CLIENT')
 
         if http_client_type == "httpx":
             # 使用 AsyncHTTPXClient
@@ -65,7 +64,11 @@ class MonitoringController:
         # Initialize telegram bots
         asyncio_helper.REQUEST_TIMEOUT = timeout
         asyncio_helper.proxy = proxy or None
-        # asyncio_helper.API_URL = "https://tg.samiya.pro/bot{0}/{1}"
+
+        # 尝试从环境变量获取API URL，如果未设置，则使用默认值
+        API_URL = os.getenv('TELEGRAM_API_URL', 'https://api.telegram.org/bot{0}/{1}')
+        # 将API_URL设置到asyncio_helper的属性中
+        asyncio_helper.API_URL = API_URL
 
         # 动态获取所有的TELEGRAM_BOT_TOKEN环境变量
         telegram_bot_tokens = {

@@ -42,7 +42,7 @@ class AsyncResponse:
         pass
 
 
-def before_sleep_log(retry_state):
+def custom_before_sleep_log(retry_state):
     exception = retry_state.outcome.exception()
     if exception:
         if hasattr(exception, "status"):
@@ -72,7 +72,7 @@ RETRY_ARGUMENTS = {
     "wait": wait_fixed(1),
     "stop": stop_after_attempt(3),
     "retry": retry_if_exception_type(aiohttp.ClientError),
-    "before_sleep": before_sleep_log,
+    "before_sleep": custom_before_sleep_log,
 }
 
 
@@ -108,7 +108,7 @@ class AsyncAIOHTTPClient:
         client = await self._get_client()
         if self._proxy:
             kwargs["proxy"] = self._proxy
-        response = await client.request(method, url, **kwargs)
+        response = await client.request(method, url, ssl = False, **kwargs)
         return AsyncResponse(response)
 
     @retry(**RETRY_ARGUMENTS)

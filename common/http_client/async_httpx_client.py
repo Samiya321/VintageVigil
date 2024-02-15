@@ -8,16 +8,9 @@ from tenacity import (
     before_sleep_log,
 )
 
-# 使用Tenacity库进行重试的通用配置
-RETRY_ARGUMENTS = {
-    "wait": wait_fixed(1),
-    "stop": stop_after_attempt(3),
-    "retry": retry_if_exception_type(httpx.HTTPError),
-    "before_sleep": before_sleep_log,
-}
 
 # 自定义重试前的回调函数
-def before_sleep_log(retry_state):
+def custom_before_sleep_log(retry_state):
     exception = retry_state.outcome.exception()
     if exception:
         if isinstance(exception, httpx.HTTPStatusError):
@@ -40,7 +33,13 @@ def before_sleep_log(retry_state):
     else:
         logger.info("正在重试...")
 
-
+# 使用Tenacity库进行重试的通用配置
+RETRY_ARGUMENTS = {
+    "wait": wait_fixed(1),
+    "stop": stop_after_attempt(3),
+    "retry": retry_if_exception_type(httpx.HTTPError),
+    "before_sleep": custom_before_sleep_log,
+}
 class AsyncHTTPResponse:
     def __init__(self, response: httpx.Response):
         self._response = response
