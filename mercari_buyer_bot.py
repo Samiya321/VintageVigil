@@ -1,13 +1,45 @@
 import re
 import telebot
 import requests
-from uuid import uuid4
+from uuid import uuid4, UUID
 import ecdsa
-from mercapi.util.jwt import generate_dpop
 from datetime import datetime
 
-API_TOKEN = ""
+import random
+from time import time
+from typing import Dict, Optional
+
+from ecdsa import SigningKey
+from jose import jws
+from jose.backends.ecdsa_backend import ECDSAECKey
+from jose.constants import ALGORITHMS
+
+API_TOKEN = "5652509870:AAG93c-5qeSeBN-hYUPy0cWywX5RvAXm6cQ"
 bot = telebot.TeleBot(API_TOKEN)
+
+
+def generate_dpop(
+    url: str,
+    method: str,
+    key: SigningKey,
+    extra_payload: Optional[Dict[str, str]] = None,
+) -> str:
+    payload = {
+        "iat": int(time()),
+        "jti": str(UUID(int=random.getrandbits(128))),
+        "htu": url,
+        "htm": method,
+        **extra_payload,
+    }
+
+    ec_key = ECDSAECKey(key, ALGORITHMS.ES256)
+    headers = {
+        "typ": "dpop+jwt",
+        "alg": "ES256",
+        "jwk": {k: ec_key.to_dict()[k] for k in ["crv", "kty", "x", "y"]},
+    }
+
+    return jws.sign(payload, key, headers, ALGORITHMS.ES256)
 
 
 def create_headers_dpop(method, url):
@@ -59,7 +91,9 @@ def process_message(message):
                 # 获取并转换时间戳
                 updated = timestamp_to_datetime(data.get("data", {}).get("updated"))
                 created = timestamp_to_datetime(data.get("data", {}).get("created"))
-                reply_message = f"买家主页: {profile_url}\n更新时间: {updated}\n创建时间: {created}"
+                reply_message = (
+                    f"买家主页: {profile_url}\n更新时间: {updated}\n创建时间: {created}"
+                )
                 bot.reply_to(message, reply_message)
                 return
         bot.reply_to(

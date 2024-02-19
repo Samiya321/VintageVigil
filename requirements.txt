@@ -1,12 +1,13 @@
-telebot==0.0.5
 aiohttp==3.9.1
+telebot==0.0.5
 ecdsa==0.18.0
-httpx==0.23.0
+httpx==0.26.0
 httpx[http2]
 loguru==0.7.2
-mercapi==0.3.0
 parsel==1.8.1
 PyJWT==2.8.0
 python-dotenv==1.0.1
+python_jose==3.3.0
+Requests==2.31.0
 tenacity==8.2.3
 toml==0.10.2

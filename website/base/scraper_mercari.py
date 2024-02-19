@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from uuid import uuid4
 
 import ecdsa
-from mercapi.util.jwt import generate_dpop
+from common.utils.jwt import generate_dpop
 
 from .common_imports import *
 
