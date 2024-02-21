@@ -6,6 +6,8 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends tzdata && \
     ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
     echo Asia/Shanghai > /etc/timezone && \
+    # 清理缓存和不再需要的文件
+    apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 # 设置工作目录
@@ -14,7 +16,9 @@ WORKDIR /root/VintageVigil
 # 将依赖文件单独复制，以利用Docker缓存
 COPY requirements.txt .
 # 安装Python依赖
-RUN pip install --no-cache-dir -r requirements.txt --target /root/VintageVigil/dependencies
+RUN pip install --no-cache-dir -r requirements.txt --target /root/VintageVigil/dependencies && \
+    # 清理pip缓存
+    rm -rf /root/.cache/pip
 
 # 将代码复制到容器内
 COPY . .

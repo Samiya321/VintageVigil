@@ -1,0 +1,48 @@
+# 阶段一：构建阶段
+FROM python:3.10-alpine AS builder
+
+# 安装时区数据和其他依赖
+RUN apk update && \
+    apk add --no-cache tzdata && \
+    cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
+    echo "Asia/Shanghai" > /etc/timezone && \
+    apk del tzdata && \
+    rm -rf /var/cache/apk/*
+
+# 设置工作目录
+WORKDIR /root/VintageVigil
+
+# 安装构建依赖
+# 注意：Alpine 上可能需要安装额外的依赖来编译某些 Python 包
+RUN apk add --no-cache --virtual .build-deps \
+    build-base \
+    libffi-dev \
+    openssl-dev
+
+# 将依赖文件单独复制，以利用 Docker 缓存
+COPY requirements.txt .
+# 安装 Python 依赖
+RUN pip install --no-cache-dir -r requirements.txt --target /root/VintageVigil/dependencies && \
+    apk del .build-deps
+
+# 将代码复制到容器内
+COPY . .
+
+# 阶段二：运行阶段
+FROM python:3.10-alpine AS runner
+
+# 复制时区设置
+COPY --from=builder /etc/localtime /etc/localtime
+COPY --from=builder /etc/timezone /etc/timezone
+
+# 设置工作目录
+WORKDIR /root/VintageVigil
+
+# 从构建阶段复制已安装的依赖
+COPY --from=builder /root/VintageVigil/dependencies /usr/local/lib/python3.10/site-packages
+
+# 从构建阶段复制项目文件
+COPY --from=builder /root/VintageVigil .
+
+# 设置容器启动时执行的命令
+CMD ["python", "./main.py"]
