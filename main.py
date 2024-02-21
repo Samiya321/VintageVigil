@@ -3,21 +3,24 @@ import os
 from dotenv import load_dotenv
 from telebot.async_telebot import AsyncTeleBot
 from telebot import asyncio_helper
-
+import argparse
 from loguru import logger
 
 from monitor import setup_and_monitor
 from common import AsyncHTTPXClient, AsyncAIOHTTPClient
 
 class MonitoringController:
-    def __init__(self):
+    def __init__(self, base_path="user", direct_user_path=None):
         """
-        Initializes the MonitoringController class.
+        Initializes the MonitoringController class with the ability to accept a custom directory path.
 
-        The MonitoringController class is responsible for controlling the monitoring loop,
-        managing resources such as the http_client and telegram bots, and starting the monitoring process.
+        Args:
+            base_path (str, optional): Base directory path to look for user directories. Defaults to "user".
+            direct_user_path (str, optional): Direct path to a user directory. If provided, only this directory will be monitored.
         """
         self.is_running = True  # 用于通知监控任务停止
+        self.base_path = base_path
+        self.direct_user_path = direct_user_path
         self.http_client = None
         self.telegram_bots = {}
 
@@ -101,24 +104,29 @@ class MonitoringController:
             await bot.close_session()
             logger.info(f"telegram bot: {index} has closed")
 
-    def fetch_user_directories(self, base_path):
+    def fetch_user_directories(self):
         """
-        Retrieve directories for user monitoring.
+        Retrieve directories for user monitoring based on the provided path.
         """
+        # 如果提供了直接的用户路径，则仅返回该路径
+        if self.direct_user_path:
+            return (
+                [self.direct_user_path] if os.path.exists(self.direct_user_path) else []
+            )
+        # 否则，返回基路径下的所有用户目录
         return [
-            dir_entry.path for dir_entry in os.scandir(base_path) if dir_entry.is_dir()
+            dir_entry.path
+            for dir_entry in os.scandir(self.base_path)
+            if dir_entry.is_dir()
         ]
 
     async def start_monitoring(self):
         """
-        Starts the monitoring process.
-
-        This method starts the VintageVigil monitoring process by initializing the necessary resources
-        and setting up and monitoring user directories asynchronously.
+        Starts the monitoring process, with modifications to accept custom directory paths.
         """
         logger.info("Starting VintageVigil...")
         await self.initialize_resources(parse_mode="Markdown")
-        user_directories = self.fetch_user_directories("user")
+        user_directories = self.fetch_user_directories()
 
         monitor_tasks = [
             asyncio.create_task(
@@ -148,7 +156,24 @@ class MonitoringController:
 
 
 if __name__ == "__main__":
-    controller = MonitoringController()
+    parser = argparse.ArgumentParser(
+        description="Monitor user directories for notifications."
+    )
+    parser.add_argument(
+        "-r",
+        "--base-path",
+        help="Base directory path to look for user directories.",
+        default="user",
+    )
+    parser.add_argument(
+        "-u", "--user-path", help="Direct path to a specific user directory to monitor."
+    )
+
+    args = parser.parse_args()
+
+    controller = MonitoringController(
+        base_path=args.base_path, direct_user_path=args.user_path
+    )
     try:
         asyncio.run(controller.run())
     except KeyboardInterrupt:
