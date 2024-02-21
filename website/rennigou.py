@@ -1,5 +1,5 @@
 import time
-import jwt
+from jose import jwt
 import os
 from datetime import datetime, timedelta
 from .base.common_imports import *
