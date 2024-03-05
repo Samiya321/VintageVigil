@@ -30,6 +30,12 @@ FROM python:3.10-slim AS runner
 COPY --from=builder /etc/localtime /etc/localtime
 COPY --from=builder /etc/timezone /etc/timezone
 
+# 安装运行时依赖
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends jq curl && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
 # 设置工作目录
 WORKDIR /root/VintageVigil
 
@@ -39,6 +45,9 @@ COPY --from=builder /root/VintageVigil/dependencies /usr/local/lib/python3.10/si
 # 从构建阶段复制项目文件
 COPY --from=builder /root/VintageVigil .
 
+# 确保启动脚本具有执行权限
+RUN chmod +x /root/VintageVigil/start.sh
+
 # 设置容器启动时执行的命令（根据你的需要选择一个）
 # 自动监控
 # CMD ["bash", "./run_checker.sh"] 
@@ -47,4 +56,5 @@ COPY --from=builder /root/VintageVigil .
 # CMD ["sh", "-c", "python ./main.py > /dev/null 2>&1"] 
 
 # 在控制台输出日志
-CMD ["python", "./main.py"]
+# CMD ["python", "./main.py"]
+CMD ["sh", "-c", "./start.sh"]

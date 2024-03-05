@@ -12,8 +12,6 @@ services:
     stdin_open: true
     tty: true
     command: /data -A
-    networks:
-      - vintagevigil
 # 爬虫    
   VintageVigil:
     image: samiya777/vintagevigil:latest
@@ -27,9 +25,3 @@ services:
     volumes:
       - /root/VintageUser/.env:/root/VintageVigil/.env # 环境变量
       - /root/VintageUser/lx:/root/VintageVigil/user/lx # 配置文件
-    networks:
-      - vintagevigil
-
-networks:
-    vintagevigil:
-      driver: bridge

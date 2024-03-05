@@ -35,6 +35,9 @@ FROM python:3.10-alpine AS runner
 COPY --from=builder /etc/localtime /etc/localtime
 COPY --from=builder /etc/timezone /etc/timezone
 
+# 安装运行时依赖
+RUN apk add --no-cache jq curl
+
 # 设置工作目录
 WORKDIR /root/VintageVigil
 
@@ -44,5 +47,9 @@ COPY --from=builder /root/VintageVigil/dependencies /usr/local/lib/python3.10/si
 # 从构建阶段复制项目文件
 COPY --from=builder /root/VintageVigil .
 
+# 确保启动脚本具有执行权限
+RUN chmod +x /root/VintageVigil/start.sh
+
 # 设置容器启动时执行的命令
-CMD ["python", "./main.py"]
+# CMD ["python", "./main.py"]
+CMD ["sh", "-c", "./start.sh"]
