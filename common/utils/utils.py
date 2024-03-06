@@ -14,7 +14,7 @@ def extract_keyword_from_url(keyword):
         query_params = parse_qs(parsed_url.query)
 
         # 检查关键参数并返回相应的值
-        for key in ["q", "search_word", "query"]:
+        for key in ["q", "search_word", "query", "keyword"]:
             if key in query_params:
                 # 通常参数是一个列表，返回第一个值
                 return query_params[key][0]

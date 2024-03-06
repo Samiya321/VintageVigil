@@ -64,9 +64,6 @@ class BaseSearch(ABC):
                     self.root_url, params=params, headers=headers
                 )
             response.raise_for_status()
-            # res_headers = response._response.headers.get("Cf-Cache-Status")
-            # if res_headers != "DYNAMIC":
-            #     pass
             await response.close()
 
             return await response.json()
@@ -79,11 +76,12 @@ class BaseSearch(ABC):
             "DPoP": self.create_headers_dpop(method),
             "X-Platform": "web",  # mercari requires this header
             "Accept": "application/json, text/plain, */*",
-            "Accept-Encoding": "deflate, gzip",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Origin": "https://jp.mercari.com",
             "Content-Type": "application/json; charset=utf-8",
             # courtesy header since they're blocking python-requests (returns 0 results)
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36 Edg/121.0.0.0",
-            "Cache-Control": "no-cache",
+            "Cache-Control": "no-cache, no-store, must-revalidate",
             "Pragma": "no-cache",
         }
         return headers

@@ -8,7 +8,7 @@ user = "Default User"
 # Telegram 设置
 # Telegram用户ID，与企业微信用户ID至少需要一个
 # 可通过给 https://t.me/username_to_id_bot 发一条消息来获取
-telegram_chat_ids = [123456,789123]
+telegram_chat_ids = ["123456","789123"]
 # Telegram 消息发送类型
 # 可选项：1代表纯文本，2代表文字+图片分开发送，3代表图文一起发送，默认为3
 tg_send_type = 3
@@ -37,13 +37,13 @@ user_max_pages = 20
 # 可选项，默认值为 0.049
 exchange_rate = 0.049
 
-# 每个搜索任务的最大并发数
+# 每个搜索任务的最大并发数，即动态并发搜索的页数
 # 可选项，默认值为10
 max_concurrency = 10
 
 # 自定义消息推送模板
 # 可选项，有默认模板
-# 可用参数
+# 可用占位符如下：
 # id 商品ID
 # imageURL 商品图片链接
 # productName 商品名

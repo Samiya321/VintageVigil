@@ -52,8 +52,5 @@ class MercariItems(BaseSearch):
         return "mercari_user"
 
     async def get_item_status(self, item):
-        if item.get("status") == "on_sale":
-            status = 1
-        else:
-            status = 0
+        status = 1 if item.get("status") == "on_sale" else 0
         return status

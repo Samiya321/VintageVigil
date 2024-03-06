@@ -27,8 +27,6 @@ for site_name in "${!urls[@]}"; do
   total_connect_time=0
   total_dns_time=0
   total_tls_time=0
-  total_redirect_time=0
-  total_pretransfer_time=0
   total_starttransfer_time=0
   total_total_time=0
 
@@ -40,8 +38,6 @@ for site_name in "${!urls[@]}"; do
     connect_time=$(echo "$result" | grep "连接时间" | awk '{print $NF}')
     dns_time=$(echo "$result" | grep "DNS解析时间" | awk '{print $NF}')
     tls_time=$(echo "$result" | grep "TLS握手时间" | awk '{print $NF}')
-    redirect_time=$(echo "$result" | grep "重定向时间" | awk '{print $NF}')
-    pretransfer_time=$(echo "$result" | grep "准备传输时间" | awk '{print $NF}')
     starttransfer_time=$(echo "$result" | grep "传输开始时间" | awk '{print $NF}')
     total_time=$(echo "$result" | grep "总时间" | awk '{print $NF}')
 
@@ -49,8 +45,6 @@ for site_name in "${!urls[@]}"; do
     total_connect_time=$(echo "$total_connect_time + $connect_time" | bc)
     total_dns_time=$(echo "$total_dns_time + $dns_time" | bc)
     total_tls_time=$(echo "$total_tls_time + $tls_time" | bc)
-    total_redirect_time=$(echo "$total_redirect_time + $redirect_time" | bc)
-    total_pretransfer_time=$(echo "$total_pretransfer_time + $pretransfer_time" | bc)
     total_starttransfer_time=$(echo "$total_starttransfer_time + $starttransfer_time" | bc)
     total_total_time=$(echo "$total_total_time + $total_time" | bc)
 
@@ -70,8 +64,6 @@ for site_name in "${!urls[@]}"; do
   printf "连接时间 平均值: %.4f 秒\n" $average_connect_time
   printf "DNS解析时间 平均值: %.4f 秒\n" $average_dns_time
   printf "TLS握手时间 平均值: %.4f 秒\n" $average_tls_time
-  printf "重定向时间 平均值: %.4f 秒\n" $average_redirect_time
-  printf "准备传输时间 平均值: %.4f 秒\n" $average_pretransfer_time
   printf "传输开始时间 平均值: %.4f 秒\n" $average_starttransfer_time
   printf "总时间 平均值: %.4f 秒\n" $average_total_time
   echo "-----------------------------------------"

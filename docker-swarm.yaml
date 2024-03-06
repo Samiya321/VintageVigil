@@ -1,0 +1,42 @@
+version: '3.7'
+
+services:
+  vintagevigil:
+    image: samiya777/vintagevigil:alpine
+    environment:
+      # 配置文件远程仓库路径（如果不填写，请自行映射config至容器内）
+      - CONFIG_PATH=https://github.com/Samiya321/VintageUser/tree/main/路径
+      # 配置文件变化监控间隔（默认60）
+      # - CHECK_INTERVAL=60
+      # 是否使用内置的Github Token来进行请求，否则每分钟只能请求60次/单个IP（默认是）
+      # - USE_TOKEN=true
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.hostname==节点名
+      update_config:
+        parallelism: 1
+        failure_action: pause
+        monitor: 5s
+        max_failure_ratio: 0
+        order: stop-first
+      rollback_config:
+        parallelism: 1
+        failure_action: pause
+        monitor: 5s
+        max_failure_ratio: 0
+        order: stop-first
+    configs:
+      - source: env
+        target: /root/VintageVigil/.env
+    logging:
+      driver: json-file
+      options:
+        max-size: 20m
+        max-file: "3"
+
+configs:
+  env:
+    external: true

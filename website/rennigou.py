@@ -26,39 +26,50 @@ class Rennigou(BaseScrapy):
     async def search(
         self, search_term, iteration_count, user_max_pages
     ) -> AsyncGenerator[SearchResultItem, None]:
+        max_concurrency = search_term.get(
+            "max_concurrency", 20
+        )  # 从search_term获取最大并发数，默认为10
+        semaphore = asyncio.Semaphore(max_concurrency)  # 使用信号量来限制并发数量
+
+        async def fetch_page(page_number):
+            async with semaphore:
+                return await self.fetch_products(search_term, page_number)
+
         current_page = 1
+        tasks = []
 
-        # 限制并发页数
-        concurrent_pages = search_term["max_concurrency"]
+        # 当has_next为真且未达到iteration_count指定的页数限制时，继续创建任务
+        while self.has_next and (
+            iteration_count == 0 or current_page <= user_max_pages
+        ):
+            if iteration_count != 0 and current_page > user_max_pages:
+                break  # 达到user_max_pages限制时停止创建新任务
 
-        while True:
-            tasks = []
-            for _ in range(concurrent_pages):
-                # 根据iteration_count和user_max_pages决定是否继续添加任务
-                if (
-                    iteration_count != 0 and current_page > user_max_pages
-                ) or not self.has_next:
-                    break
-                tasks.append(self.fetch_products(search_term, current_page))
+            # 创建任务，直到达到并发限制或没有更多页面需要请求
+            while (
+                len(tasks) < max_concurrency
+                and (iteration_count == 0 or current_page <= user_max_pages)
+                and self.has_next
+            ):
+                tasks.append(fetch_page(current_page))
                 current_page += 1
 
-            if not tasks:  # 如果没有任务需要执行，则退出循环
-                break
+            # 使用asyncio.gather等待所有当前任务完成
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+            tasks = []  # 重置任务列表以便下一批任务的创建
 
-            current_page_contents = await asyncio.gather(*tasks, return_exceptions=True)
-
-            for page_content in current_page_contents:
-                if isinstance(page_content, (Exception, BaseException)):
-                    continue  # 处理或记录异常
-
-                if page_content is None or not self.has_next:
+            # 处理结果
+            for page_content in results:
+                if page_content is None:
                     self.has_next = False
-                    break  # 如果没有下一页，则停止抓取
-
+                    break
                 for product in page_content:
                     yield product
 
-            if not self.has_next:
+            # 检查是否继续创建新任务
+            if not self.has_next or (
+                iteration_count != 0 and current_page > user_max_pages
+            ):
                 break
 
         self.has_next = True  # 重置 has_next 以供下次搜索使用
@@ -87,6 +98,8 @@ class Rennigou(BaseScrapy):
             "Authorization": f"Bearer {self.create_jwt_token()}",
             "uid": self.uid,
             "token": self.token,
+            "Accept-Encoding": "gzip, deflate, br",
+            "Accept": "application/json, text/plain, */*",
         }
         return True
 

@@ -4,6 +4,13 @@ from .base.scraper import BaseScrapy
 
 class Lashinbang(BaseScrapy):
     def __init__(self, http_client):
+        headers = {
+            "Cache-Control": "no-cache",
+            "Pragma": "no-cache",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 Edg/122.0.0.0",
+            "Accept": "*/*",
+            "Accept-Encoding": "gzip, deflate, br",
+        }
         super().__init__(
             base_url="http://lashinbang-f-s.snva.jp",
             page_size=100,
@@ -13,13 +20,14 @@ class Lashinbang(BaseScrapy):
 
     async def create_search_params(self, search, page: int) -> dict:
         return {
-            "q": search["keyword"],
-            "s6o": 1,
-            "pl": 1,
-            "sort": getattr(search["filter"], "sort", "Number18%2CScore"),
-            "limit": self.page_size,
-            "o": (page - 1) * self.page_size,  # Offset calculation for pagination
-            "n6l": 1,
+            "q": search["keyword"], # 搜索关键词
+            "sort": getattr(search["filter"], "sort", "Number18%2CScore"), # 商品排序方式
+            "limit": self.page_size, # 每页返回的商品数量
+            "o": (page - 1) * self.page_size,  # 偏移值，用于翻页
+            "s6o": 1, # TODO
+            "pl": 1, # TODO
+            "n6l": 1, # 只看在库有货的商品，如果为0则显示所有商品（包括品切的）
+            "s1": 2, # 打开全年龄限制
             "callback": "callback",
             "controller": "lashinbang_front",
         }

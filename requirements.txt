@@ -8,3 +8,4 @@ toml==0.10.2
 python-dotenv==1.0.1
 python_jose==3.3.0
 ecdsa==0.18.0
+brotli==1.1.0

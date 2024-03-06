@@ -10,3 +10,9 @@
 - [ ] 将监控系统接入telegram bot，以允许随时添加用户配置文件 或者停止用户任务
 - [ ] Alpine的一键DD脚本
 - [ ] 对于煤炉推送时间不一样的现象 观察它属于哪个排序？
+- [ ] 煤炉缓存问题 1. 请求链接加时间戳 2. 请求头中的Origin和Accept-Encoding是否有影响
+- [ ] https://api.mercari.jp/users/get_profile?user_id=193978404&_user_format=profile 该接口返回email和phone_number，不知是否需要登录才返回？
+- [ ] 煤炉过滤器的值，映射
+- [ ] paypay和fril的过滤还没对
+- [x] 请求链接是否一定要https？
+- [ ] 

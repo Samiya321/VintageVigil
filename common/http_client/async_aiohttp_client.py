@@ -6,9 +6,7 @@ from tenacity import (
     retry,
     wait_fixed,
     stop_after_attempt,
-    retry_if_exception_type,
-    before_sleep_log,
-)
+    retry_if_exception_type)
 from loguru import logger
 
 

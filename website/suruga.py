@@ -1,4 +1,5 @@
 from parsel import Selector
+from urllib.parse import urlparse, parse_qs
 
 from .base.common_imports import *
 from .base.scraper import BaseScrapy
@@ -10,8 +11,9 @@ class Suruga(BaseScrapy):
         headers = {
             "Cache-Control": "no-cache",
             "Pragma": "no-cache",
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36 Edg/121.0.0.0",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 Edg/122.0.0.0",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+            "Accept-Encoding": "gzip, deflate, br",
         }
         super().__init__(
             base_url="http://www.suruga-ya.jp/search",
@@ -28,26 +30,29 @@ class Suruga(BaseScrapy):
     async def create_search_params(self, search, page: int) -> dict:
         # 判断搜索关键字是否为URL
         is_url = "https" in search["keyword"]
-        get_param = (
-            (
-                lambda param, default="": self.get_param_value(search["keyword"], param)
-                or default
-            )
-            if is_url
-            else lambda param, default="": default
-        )
+        if is_url:
+            # 解析URL并提取查询参数
+            parsed_url = urlparse(search["keyword"])
+            query_params = parse_qs(parsed_url.query)
 
-        return {
-            "category": get_param("category") if is_url else "",  # カテゴリー
-            "search_word": get_param("search_word") if is_url else search["keyword"],
-            "rankBy": get_param("rankBy", "modificationTime:descending")
-            if is_url
-            else "modificationTime:descending",  # 並べ替え
-            "hendou": get_param("hendou") if is_url else "",  # 変動
-            "page": page,
-            "adult_s": get_param("adult_s", 1) if is_url else 1,  # セーフサーチ
-            "inStock": get_param("inStock", "Off") if is_url else "Off",  # 品切れ
-        }
+            # 将查询参数转换为字典，取每个查询参数的第一个值
+            params = {k: v[0] for k, v in query_params.items()}
+
+            # 添加或修改页码参数
+            params["page"] = page
+
+            return params
+        else:
+            # 使用默认字典，只修改search_word和page
+            return {
+                "category": "",  # 品类
+                "search_word": search["keyword"],  # 搜索关键词
+                "rankBy": "modificationTime:descending",  # 排序顺序
+                "hendou": "",  # 変動
+                "page": page,  # 页数
+                "adult_s": 1,  # 是否开启成人项
+                "inStock": "Off",  # 是否显示缺货商品，默认不显示
+            }
 
     async def get_max_pages(self, search) -> int:
         res = await self.get_response(search, 1)

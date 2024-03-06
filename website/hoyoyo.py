@@ -7,20 +7,26 @@ class HoYoYo(BaseScrapy):
         headers = {
             "x-requested-with": "XMLHttpRequest",
             "Host": "cn.hoyoyo.com",
+            "Cache-Control": "no-cache",
+            "Pragma": "no-cache",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 Edg/122.0.0.0",
+            "Accept": "application/json, text/javascript, */*; q=0.01",
+            "Accept-Encoding": "gzip, deflate, br",
         }
         super().__init__(
-            base_url="https://cn.hoyoyo.com/suruga~search.html",
+            base_url="http://cn.hoyoyo.com/suruga~search.html",
             page_size=24,
             http_client=http_client,
             method="GET",
             headers=headers,
         )
 
+    async def create_request_url(self, params):
+        return params,None
+
     async def create_search_params(self, search, page: int) -> dict:
-        return {
-            "keyword": search["keyword"],
-            "page": page,
-        }
+        search_url = search["keyword"]
+        return f"{search_url}&page={page}"
 
     async def get_max_pages(self, search) -> int:
         response = await self.get_response(search, 1)

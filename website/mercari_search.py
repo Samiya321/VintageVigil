@@ -84,17 +84,20 @@ class MercariSearch(BaseSearch):
             # this is hardcoded in their frontend currently, so leaving it
             "indexRouting": "INDEX_ROUTING_UNSPECIFIED",
             "searchCondition": {
-                "keyword": search["keyword"],
-                "excludeKeyword": getattr(search["filter"], "exclude_keyword", ""),
-                "sort": sort_type,
-                "order": "ORDER_DESC",
+                "keyword": search["keyword"],  # 搜索关键词
+                "excludeKeyword": getattr(
+                    search["filter"], "exclude_keyword", ""
+                ),  # 排除关键词
+                "sort": sort_type,  # 排序方式
+                "order": "ORDER_DESC",  # 排序顺序
+                "sellerId": getattr(search["filter"], "sellerId", []),  # 卖家ID
                 "status": getattr(
                     search["filter"], "status", ["STATUS_ON_SALE", "STATUS_TRADING"]
-                ),
-                "categoryId": getattr(search["filter"], "category", []),
-                "brandId": getattr(search["filter"], "brandId", []),
-                "priceMin": getattr(search["filter"], "price_min", 0),
-                "priceMax": getattr(search["filter"], "price_max", 0),
+                ),  # 商品售出状态
+                "categoryId": getattr(search["filter"], "categoryId", []),  # 商品品类
+                "brandId": getattr(search["filter"], "brandId", []),  # 商品品牌
+                "priceMin": getattr(search["filter"], "price_min", 0),  # 最低价格
+                "priceMax": getattr(search["filter"], "price_max", 0),  # 最高价格
             },
             # I'm not certain what these are, but I believe it's what mercari queries against
             # this is the default in their site, so leaving it as these 2
@@ -105,8 +108,5 @@ class MercariSearch(BaseSearch):
         return "mercari"
 
     async def get_item_status(self, item):
-        if item.get("status") == "ITEM_STATUS_ON_SALE":
-            status = 1
-        else:
-            status = 0
+        status = 1 if item.get("status") == "ITEM_STATUS_ON_SALE" else 0
         return status

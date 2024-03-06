@@ -1,0 +1,15 @@
+# HOYOYO 配置
+# 官网: https://cn.hoyoyo.com
+
+# HOYOYO 网站的搜索设置（仅限骏河屋）
+[[websites.hoyoyo.searches]]
+# 直接将网页上的网址复制即可
+# 必填项，str
+keyword = "https://cn.hoyoyo.com/suruga~search.html?keyword=%E5%AE%B6%E5%BA%AD%E6%95%99%E5%B8%AB%E3%83%92%E3%83%83%E3%83%88%E3%83%9E%E3%83%B3REBORN&keys=%E5%AE%B6%E5%BA%AD%E6%95%99%E5%B8%AB%E3%83%92%E3%83%83%E3%83%88%E3%83%9E%E3%83%B3REBORN&lang=ja&category_id=&fykeyid=34416"
+
+# 通知方式
+# from * to *
+# 必填项
+# 第一项 @Samiya310Bot（1），@Lihahadear_bot（2），企业微信Samiya（3）
+# 第二项 根据notify中填的ids定
+notify = [1,1]

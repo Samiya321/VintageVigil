@@ -31,7 +31,6 @@ class BaseScrapy(ABC):
         if max_pages == 0:
             return  # 直接返回，不执行任何任务
 
-        # 限制并发页数
         # 确保并发数不超过 MAX_CONCURRENT_PAGES 或 max_pages
         concurrent_pages = min(search_term["max_concurrency"], max_pages)
 
@@ -44,12 +43,6 @@ class BaseScrapy(ABC):
 
         tasks = [fetch_with_semaphore(page) for page in range(1, max_pages + 1)]
         pages_content = await asyncio.gather(*tasks, return_exceptions=True)
-
-        # 全并发处理每一页
-        # tasks = [
-        #     self.fetch_products(search_term, page) for page in range(1, max_pages + 1)
-        # ]
-        # pages_content = await asyncio.gather(*tasks, return_exceptions=True)
 
         # 遍历每一页的结果
         for page_products in pages_content:

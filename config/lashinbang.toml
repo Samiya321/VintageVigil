@@ -15,5 +15,9 @@ keyword = "呪術廻戦"
 notify = [1,2]
 
 [websites.lashinbang.searches.filter]
-# 排序顺序，可选项，默认最新上架
+# 排序顺序，可选项，默认関連順
+# 関連順 Score,Number18
+# 入荷日（降順）Score,Number7 
+# 更新日（降順） Number7,Score
+# 発売日（降順） Number3,Score
 sort = ""

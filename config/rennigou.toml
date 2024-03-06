@@ -7,8 +7,8 @@
 keyword = "家庭教師ヒットマンREBORN"
 
 # 搜索网站，必填项
-# all, mercari, yahooauction, rakuma, amazon, surugaya
-websiteType = "mercari"
+# 全部-all, 煤炉-mercari, 雅虎日拍-yahooauction，乐天Rakuma-rakuma，亚马逊Amazon-amazon，骏河屋-surugaya
+websiteType = "surugaya"
 
 # 通知方式
 # from * to *
@@ -19,37 +19,52 @@ notify = [1,2]
 
 
 [websites.rennigou.searches.filter]
-# 通用过滤器
-# 排序
-# mercari 空/推荐排序 price_asc/价格从低到高 price_desc/价格从高到低 new/上架日期从近到远 like_desc/点赞从多到少
-# surugaya 空/默认 price_asc/价格从低到高 price_desc/价格从高到低 new_publish/新上架商品 publish_time_asc/发售日从近到远 publish_time_desc/发售日从远到近
-sortOrder = "new"
+# >>>>>>>>>>>>>>煤炉过滤器>>>>>>>>>>>>>>>>>>>>>>>
+# 推荐排序-为空，价格降序-price_desc，价格升序-price_asc，上架日期从近到远-new，点赞从多到少-like_desc
+sortOrder = ""
 
-# 价格
-priceMin = ""
-priceMax = ""
+# 仅看有货-勾选为1，不勾选为空
+statusOnSale = "1"
 
-# 煤炉
-# 1/仅看有货 空/全部
-statusOnSale = ""
-# 品相成色 1（新品、未使用）/2（几乎未使用）/3（没有明显的划痕或污垢）/4（有一些划痕和污渍）/5（有划痕和污垢）/6（整体状况不佳） 空/全部
-conditionIds = ""
-# 2/日本内包邮 空/全部
+# 仅看现货-勾选为1，不勾选为空
+haveStock = "1"
+
+# 日本国内包邮-勾选为2，不勾选为空
 shippingPayer = ""
 
-category = ""
-brand_ids = ""
+# 新品、未使用-1，几乎未使用-2，没有明显的划痕或污垢-3，有一些划痕和污渍-4，有划痕和污垢-5，整体状况不佳-6，全部-空
+conditionIds = ""
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+# >>>>>>>>>>>>>>骏河屋过滤器>>>>>>>>>>>>>>>>>>>
+# 默认-为空，价格从低到高-price_asc，价格从高到低-price_desc，新上架商品-new_publish，发售日从进到远-publish_time_asc，发售日从远到近-publish_time_desc
+sortOrder = ""
 
-# 骏河屋
-# 1/仅看现货
-haveStock = ""
-# 2/新上架
+# 仅看现货-勾选为1，不勾选为空
+haveStock = "1"
+
+# 新上架-勾选为2，不勾选为空
 newPublish = ""
 
-# 1/不限 2/新品 3/二手 4/预约
-conditionId = ""
-# 1/2/3/4/5/6/7
-discountId = ""
-# 1029/吧唧
+# 折扣 不限为1，后续递增到7，7为>100%
+discountId = "1"
+
+# 分类，1029/吧唧
 category = ""
+
+# 1/不限 2/新品 3/二手 4/预约
+conditionId = "1"
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+
+# >>>>>>>>>>>>>>雅虎日拍过滤器>>>>>>>>>>>>>>>>>>>>>
+# TODO
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+# >>>>>>>>>>>>>>>Rakuma过滤器>>>>>>>>>>>>>>>>>>>>
+# TODO
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+# >>>>>>>>>>>>>>>亚马逊过滤器>>>>>>>>>>>>>>>>>>>>>
+# TODO
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

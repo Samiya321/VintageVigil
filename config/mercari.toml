@@ -17,13 +17,15 @@ notify = [1,2]
 [websites.mercari.searches.filter]
 # 排除关键词，可选项
 exclude_keyword = ""
+# 卖家ID，可选项
+sellerId = ""
 # 商品状态，可选项，默认为on_sale和trading
 status = ""
+# 品类，可选项
+categoryId = ""
+# 品牌，可选项
+brandId = ""
 # 最低价格，可选项
 price_min = ""
 # 最高价格，可选项
 price_max = ""
-# 品类，可选项
-category = ""
-# 品牌，可选项
-brandId = ""

@@ -16,5 +16,5 @@ keyword = '110551852'
 notify = [1,2]
 
 [websites.mercari_user.searches.filter]
-# 商品状态，可选项，默认为on_sale和trading
-status = ""
+# 商品状态(on_sale,trading,sold_out)，可选项，默认为 (on_sale,trading)
+status = "on_sale,trading,sold_out"

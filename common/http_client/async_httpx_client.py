@@ -4,9 +4,7 @@ from tenacity import (
     retry,
     wait_fixed,
     stop_after_attempt,
-    retry_if_exception_type,
-    before_sleep_log,
-)
+    retry_if_exception_type)
 
 
 # 自定义重试前的回调函数
