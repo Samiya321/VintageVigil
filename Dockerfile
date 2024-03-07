@@ -1,12 +1,11 @@
 # 阶段一：构建阶段
 FROM python:3.10 AS builder
 
-# 合并命令以减少层数，并安装时区数据
+# 合并命令以减少层数，并安装时区数据，同时清理缓存和不再需要的文件
 RUN apt-get update && \
     apt-get install -y --no-install-recommends tzdata && \
     ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
     echo Asia/Shanghai > /etc/timezone && \
-    # 清理缓存和不再需要的文件
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -15,10 +14,9 @@ WORKDIR /root/VintageVigil
 
 # 将依赖文件单独复制，以利用Docker缓存
 COPY requirements.txt .
-# 安装Python依赖
-RUN pip install --no-cache-dir -r requirements.txt --target /root/VintageVigil/dependencies && \
-    # 清理pip缓存
-    rm -rf /root/.cache/pip
+
+# 安装Python依赖，并清理pip缓存
+RUN pip install --no-cache-dir -r requirements.txt --target /root/dependencies
 
 # 将代码复制到容器内
 COPY . .
@@ -30,7 +28,7 @@ FROM python:3.10-slim AS runner
 COPY --from=builder /etc/localtime /etc/localtime
 COPY --from=builder /etc/timezone /etc/timezone
 
-# 安装运行时依赖
+# 安装运行时依赖，并清理APT缓存
 RUN apt-get update && \
     apt-get install -y --no-install-recommends jq curl && \
     apt-get clean && \
@@ -40,13 +38,14 @@ RUN apt-get update && \
 WORKDIR /root/VintageVigil
 
 # 从构建阶段复制已安装的依赖
-COPY --from=builder /root/VintageVigil/dependencies /usr/local/lib/python3.10/site-packages
+COPY --from=builder /root/dependencies /usr/local/lib/python3.10/site-packages
 
 # 从构建阶段复制项目文件
 COPY --from=builder /root/VintageVigil .
 
 # 确保启动脚本具有执行权限
 RUN chmod +x /root/VintageVigil/start.sh
+
 
 # 设置容器启动时执行的命令（根据你的需要选择一个）
 # 自动监控

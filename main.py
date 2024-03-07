@@ -5,7 +5,7 @@ from telebot.async_telebot import AsyncTeleBot
 from telebot import asyncio_helper
 import argparse
 from loguru import logger
-
+import sys
 from monitor import setup_and_monitor
 from common import AsyncHTTPXClient, AsyncAIOHTTPClient
 
@@ -23,7 +23,7 @@ class MonitoringController:
         self.direct_user_path = direct_user_path
         self.http_client = None
         self.telegram_bots = {}
-
+        
     async def initialize_resources(self, parse_mode=None):
         """
         Initializes the necessary resources for monitoring.
@@ -36,6 +36,19 @@ class MonitoringController:
         """
 
         load_dotenv()
+
+        # 检查环境变量DEBUG的值
+        debug_mode = os.getenv("DEBUG", "false").lower() == "true"
+
+        # 根据DEBUG的值选择不同的日志格式
+        if debug_mode:
+            # 包含文件名和行号的详细日志格式
+            log_format = "<green>{time:YYYY-MM-DD HH:mm:ss:SSS}</green> | <level>{level: <8}</level> | <cyan>{file}</cyan>:<cyan>{line}</cyan> | <level>{message}</level>"
+        else:
+            # 不包含文件名和行号的简洁日志格式
+            log_format = "<green>{time:YYYY-MM-DD HH:mm:ss:SSS}</green> | <level>{level: <8}</level> | <level>{message}</level>"
+
+        logger.configure(handlers=[{"sink": sys.stdout, "format": log_format}])
 
         proxy = os.getenv('HTTP_PROXY')
 
