@@ -1,4 +1,4 @@
-version: '3.7'
+version: '3.8'
 
 services:
   vintagevigil:
@@ -8,8 +8,11 @@ services:
       - CONFIG_PATH=https://github.com/Samiya321/VintageUser/tree/main/路径
       # 配置文件变化监控间隔（默认60）
       # - CHECK_INTERVAL=60
-      # 是否使用内置的Github Token来进行请求，否则每分钟只能请求60次/单个IP（默认是）
+      # 是否使用内置的Github Token来进行GitHub请求，否则每分钟只能请求60次/单个IP（默认是）
       # - USE_TOKEN=true
+      - TZ=Asia/Shanghai
+    working_dir: /root/VintageVigil
+    command: sh -c "./start.sh"
     deploy:
       mode: replicated
       replicas: 1
@@ -36,7 +39,11 @@ services:
       options:
         max-size: 20m
         max-file: "3"
+    networks:
+      - vintagevigil
 
 configs:
   env:
     external: true
+networks:
+  vintagevigil:

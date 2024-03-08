@@ -1,26 +1,28 @@
 version: '3.8'
+
 services:
-# Web 文件管理
-  dufs:
-    image: sigoden/dufs
-    container_name: dufs
+  vintagevigil:
+    image: samiya777/vintagevigil:alpine
     restart: unless-stopped
+    environment:
+      # 配置文件远程仓库路径（如果不填写，请自行映射config至容器内）
+      - CONFIG_PATH=https://github.com/Samiya321/VintageUser/tree/main/路径
+      # 配置文件变化监控间隔（默认60）
+      # - CHECK_INTERVAL=60
+      # 是否使用内置的Github Token来进行GitHub请求，否则每分钟只能请求60次/单个IP（默认是）
+      # - USE_TOKEN=true
+      - TZ=Asia/Shanghai
+    working_dir: /root/VintageVigil
+    command: sh -c "./start.sh"
     volumes:
-      - /root/VintageUser:/data
-    ports:
-      - 5000:5000
-    stdin_open: true
-    tty: true
-    command: /data -A
-  VintageVigil:
-    image: samiya777/vintagevigil:latest
-    container_name: vintagevigil
-    restart: unless-stopped
+      - /root/.env:/root/VintageVigil/.env
     logging:
       driver: json-file
       options:
-        max-size: "20m"
-        max-file: "3"    
-    volumes:
-      - /root/VintageUser/.env:/root/VintageVigil/.env # 环境变量
-      - /root/VintageUser/user:/root/VintageVigil/user/user # 配置文件
+        max-size: 20m
+        max-file: "3"
+    networks:
+      - vintagevigil
+
+networks:
+  vintagevigil:

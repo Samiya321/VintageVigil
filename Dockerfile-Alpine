@@ -1,14 +1,9 @@
 # 阶段一：构建阶段
 FROM python:3.10-alpine AS builder
 
-# 设置工作目录
-WORKDIR /root/VintageVigil
-
-# 安装时区数据和依赖，同时清理缓存
+# 安装依赖，同时清理缓存
 RUN apk update && \
-    apk add --no-cache tzdata build-base libffi-dev openssl-dev && \
-    cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
-    echo "Asia/Shanghai" > /etc/timezone && \
+    apk add --no-cache build-base libffi-dev openssl-dev && \
     rm -rf /var/cache/apk/*
 
 # 将依赖文件单独复制，以利用 Docker 缓存
@@ -19,28 +14,19 @@ RUN pip install --no-cache-dir -r requirements.txt --target /root/dependencies &
     apk del build-base libffi-dev openssl-dev
 
 # 将代码复制到容器内
-COPY . .
-
-# 阶段二：运行阶段
-FROM python:3.10-alpine AS runner
-
-# 复制时区设置和已安装的依赖
-COPY --from=builder /etc/localtime /etc/localtime
-COPY --from=builder /etc/timezone /etc/timezone
-COPY --from=builder /root/dependencies /usr/local/lib/python3.10/site-packages
-
-# 安装运行时依赖
-RUN apk add --no-cache jq curl
-
-# 设置工作目录
-WORKDIR /root/VintageVigil
-
-# 从构建阶段复制项目文件
-COPY --from=builder /root/VintageVigil .
+COPY . /root/VintageVigil
 
 # 确保启动脚本具有执行权限
 RUN chmod +x /root/VintageVigil/start.sh
 
-# 设置容器启动时执行的命令
-# CMD ["python", "./main.py"]
-CMD ["sh", "-c", "./start.sh"]
+# 阶段二：运行阶段
+FROM python:3.10-alpine AS runner
+
+# 复制已安装的依赖
+COPY --from=builder /root/dependencies /usr/local/lib/python3.10/site-packages
+
+# 安装运行时依赖
+RUN apk add --no-cache jq curl tzdata
+
+# 从构建阶段复制项目文件
+COPY --from=builder /root/VintageVigil /root/VintageVigil
