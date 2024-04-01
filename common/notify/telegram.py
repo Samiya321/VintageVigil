@@ -1,9 +1,12 @@
 from loguru import logger
 import asyncio
+from telebot.async_telebot import AsyncTeleBot
 
 class TelegramClient:
 
-    def __init__(self, bot, chat_ids: dict, http_client, send_type="news"):
+    def __init__(
+        self, bot: AsyncTeleBot, chat_ids: dict, http_client, send_type="news"
+    ):
         """
         初始化Telegram客户端。
 

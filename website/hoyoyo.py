@@ -14,7 +14,7 @@ class HoYoYo(BaseScrapy):
             "Accept-Encoding": "gzip, deflate, br",
         }
         super().__init__(
-            base_url="http://cn.hoyoyo.com/suruga~search.html",
+            base_url="http://www.hoyoyo.com/suruga~search.html",
             page_size=24,
             http_client=http_client,
             method="GET",
